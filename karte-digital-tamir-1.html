@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>کارت دیجیتال سرویس خودرو</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#131209;
+    --panel:#1c1a12;
+    --panel-2:#211f16;
+    --gold:#e6b23c;
+    --copper:#c6743b;
+    --text:#f2eee2;
+    --muted:#9a9483;
+    --line:#3a3826;
+    --ok:#7f9e70;
+    --no:#b5645a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top, #1c1a11 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'Vazirmatn', sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:28px 14px 60px;
+  }
+  .card{
+    width:100%;
+    max-width:400px;
+    background:var(--panel);
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.7);
+    border:1px solid var(--line);
+    position:relative;
+  }
+
+  /* HEADER */
+  .header{
+    padding:30px 24px 22px;
+    text-align:center;
+    position:relative;
+  }
+  .mark{
+    width:56px;height:56px;
+    margin:0 auto 14px;
+    border-radius:50%;
+    background:conic-gradient(from 220deg, var(--gold), var(--copper), var(--gold));
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;
+  }
+  .shop-name{
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:.3px;
+    outline:none;
+    margin:0;
+  }
+  .shop-tagline{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:6px;
+    font-weight:500;
+    outline:none;
+  }
+  .brands{
+    margin-top:16px;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:600;
+    flex-wrap:wrap;
+  }
+  .brands span{
+    border:1px solid var(--line);
+    padding:4px 10px;
+    border-radius:20px;
+  }
+
+  /* PERFORATION */
+  .perf{
+    display:flex;
+    align-items:center;
+    padding:0 8px;
+    height:0;
+    position:relative;
+  }
+  .perf::before{
+    content:'';
+    display:block;
+    width:100%;
+    border-top:2px dashed var(--line);
+  }
+  .perf .notch{
+    position:absolute;
+    width:20px;height:20px;
+    background:var(--bg);
+    border-radius:50%;
+    top:-10px;
+  }
+  .perf .notch.left{left:-10px;}
+  .perf .notch.right{right:-10px;}
+
+  /* ACTIONS */
+  .actions{
+    display:flex;
+    padding:18px 20px;
+    gap:10px;
+  }
+  .actions a{
+    flex:1;
+    text-align:center;
+    text-decoration:none;
+    color:var(--text);
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:11px 4px;
+    font-size:12px;
+    font-weight:600;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .actions a:active{transform:scale(.96);}
+  .actions a .ico{display:block;font-size:17px;margin-bottom:4px;}
+  .actions a.primary{
+    background:var(--gold);
+    color:#181509;
+    border-color:var(--gold);
+  }
+
+  /* SERVICE RECORD */
+  .record{
+    margin:4px 20px 18px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px 18px 6px;
+  }
+  .record h3{
+    margin:0 0 14px;
+    font-size:14px;
+    font-weight:700;
+    color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .record h3::before{
+    content:'';
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--gold);
+  }
+  .row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+    gap:12px;
+  }
+  .row:last-child{border-bottom:none;}
+  .row label{
+    font-size:13px;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .row .val{
+    font-size:14px;
+    font-weight:600;
+    text-align:left;
+    outline:none;
+    min-width:40%;
+    direction:ltr;
+    text-align:left;
+  }
+
+  /* CHECKLIST */
+  .checklist{
+    margin:0 20px 20px;
+  }
+  .checklist h3{
+    font-size:14px;
+    font-weight:700;
+    color:var(--gold);
+    margin:0 0 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .checklist h3::before{
+    content:'';
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--gold);
+  }
+  .chk-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .chk{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 10px;
+    font-size:12.5px;
+    cursor:pointer;
+    user-select:none;
+    transition:border-color .15s ease;
+  }
+  .chk .box{
+    width:18px;height:18px;
+    min-width:18px;
+    border-radius:5px;
+    border:1.5px solid var(--muted);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;
+    transition:all .15s ease;
+  }
+  .chk.done .box{
+    background:var(--ok);
+    border-color:var(--ok);
+    color:#12160f;
+  }
+  .chk.done{border-color:var(--ok);}
+
+  /* FOOTER */
+  .footer{
+    padding:16px 22px 24px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--muted);
+    line-height:2;
+  }
+  .footer .addr{outline:none;}
+  .footer .phones{
+    display:flex;
+    flex-direction:column;
+    margin-top:4px;
+  }
+  .footer .phones span{
+    outline:none;
+    color:var(--text);
+    font-weight:600;
+    direction:ltr;
+    text-align:right;
+  }
+
+  /* EDIT TOGGLE */
+  .edit-toggle{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--gold);
+    color:#181509;
+    border:none;
+    padding:11px 22px;
+    border-radius:30px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(230,178,60,.5);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  body.editing [contenteditable]{
+    background:rgba(230,178,60,.08);
+    border-radius:6px;
+    padding:1px 4px;
+  }
+  body.editing [contenteditable]:focus{
+    background:rgba(230,178,60,.16);
+  }
+  .hint{
+    text-align:center;
+    font-size:11px;
+    color:var(--muted);
+    margin-top:14px;
+    display:none;
+  }
+  body.editing .hint{display:block;}
+</style>
+</head>
+<body>
+
+  <div class="card" id="card">
+    <div class="header">
+      <div class="mark">🛢️</div>
+      <h1 class="shop-name" contenteditable="true">اتوسرویس شهرام</h1>
+      <div class="shop-tagline" contenteditable="true">Smooth Ride Starts with Fresh Oil</div>
+      <div class="brands">
+        <span>VW</span><span>Renault</span><span>Mitsubishi</span><span>Audi</span><span>KIA</span>
+      </div>
+    </div>
+
+    <div class="perf"><span class="notch left"></span><span class="notch right"></span></div>
+
+    <div class="actions">
+      <a href="tel:02833351767" class="primary"><span class="ico">📞</span>تماس</a>
+      <a href="https://www.google.com/maps/search/?api=1&query=%D9%82%D8%B2%D9%88%DB%8C%D9%86%20%D9%86%D9%88%D8%A7%D8%A8%20%D8%B4%D9%85%D8%A7%D9%84%DB%8C%20%D9%86%D8%A8%D8%B4%20%DA%A9%D9%88%DA%86%D9%87%20%D9%85%DB%8C%D9%86%D8%A7" target="_blank" id="mapLink"><span class="ico">📍</span>مسیر</a>
+      <a href="#" onclick="sharePage(event)"><span class="ico">🔗</span>اشتراک</a>
+    </div>
+
+    <div class="record">
+      <h3>کارت سرویس خودرو</h3>
+      <div class="row"><label>تاریخ</label><span class="val" contenteditable="true">۱۴۰۵/۰۵/۰۹</span></div>
+      <div class="row"><label>کیلومتر فعلی</label><span class="val" contenteditable="true">۸۹٬۲۰۰</span></div>
+      <div class="row"><label>کیلومتر سرویس بعدی</label><span class="val" contenteditable="true">۹۴٬۲۰۰</span></div>
+      <div class="row"><label>نوع روغن</label><span class="val" contenteditable="true">پارس ۵W۳۰</span></div>
+    </div>
+
+    <div class="checklist">
+      <h3>چک‌لیست سرویس</h3>
+      <div class="chk-grid" id="chkGrid">
+        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span>تعویض فیلتر روغن</div>
+        <div class="chk" onclick="toggle(this)"><span class="box"></span>فیلتر کابین</div>
+        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span>تعویض فیلتر هوا</div>
+        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span>صافی بنزین</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="addr" contenteditable="true">قزوین، نواب شمالی، پایین‌تر از بانک تجارت، نبش کوچه مینا</div>
+      <div class="phones">
+        <span contenteditable="true">028-33351767</span>
+        <span contenteditable="true">0912-887-2501</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">روی هر بخش که می‌خواهید ضربه بزنید و متن را ویرایش کنید</div>
+
+  <button class="edit-toggle" onclick="toggleEdit()" id="editBtn">✎ حالت ویرایش</button>
+
+<script>
+function toggle(el){
+  if(!document.body.classList.contains('editing')) return;
+  el.classList.toggle('done');
+  el.querySelector('.box').textContent = el.classList.contains('done') ? '✓' : '';
+}
+function toggleEdit(){
+  document.body.classList.toggle('editing');
+  const on = document.body.classList.contains('editing');
+  document.getElementById('editBtn').textContent = on ? '✔ پایان ویرایش' : '✎ حالت ویرایش';
+}
+function updateMapLink(){
+  const shopName = document.querySelector('.shop-name').textContent.trim();
+  const query = shopName + ' قزوین';
+  document.getElementById('mapLink').href =
+    'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query);
+}
+document.querySelector('.shop-name').addEventListener('blur', updateMapLink);
+document.querySelector('.addr').addEventListener('blur', updateMapLink);
+updateMapLink();
+
+function sharePage(e){
+  e.preventDefault();
+  if(navigator.share){
+    navigator.share({title:'کارت سرویس خودرو', url: location.href});
+  } else {
+    alert('لینک صفحه را کپی و ارسال کنید.');
+  }
+}
+</script>
+</body>
+</html>
