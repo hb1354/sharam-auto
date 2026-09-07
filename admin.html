@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پنل مدیریت | کارت دیجیتال سرویس خودرو</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">پنل مدیریت <span>&middot; هاجر سرویس</span></div>
+  <button id="logoutBtn">خروج</button>
+</div>
+
+<div class="wrap">
+
+  <div class="section-title">مغازه‌ها</div>
+  <div id="shopsList"></div>
+
+  <div class="section-title">افزودن مغازه‌ی جدید</div>
+  <div class="add-form">
+    <div class="error-msg" id="formError"></div>
+    <div class="grid">
+      <div>
+        <label for="shopName">نام مغازه</label>
+        <input type="text" id="shopName" placeholder="مثلاً اتوسرویس شهرام">
+      </div>
+      <div>
+        <label for="ownerPhone">شماره موبایل صاحب مغازه</label>
+        <input type="text" id="ownerPhone" placeholder="09xxxxxxxxx">
+      </div>
+    </div>
+    <div class="grid">
+      <div>
+        <label for="ownerEmail">ایمیل ورود مغازه</label>
+        <input type="email" id="ownerEmail" placeholder="shop1@example.com">
+      </div>
+      <div></div>
+    </div>
+    <p style="font-size:12.5px;color:var(--steel);margin:-6px 0 16px;">
+      پیش از افزودن، باید یک کاربر با همین ایمیل در بخش Authentication فایربیس ساخته باشید تا مغازه بتواند با آن وارد شود.
+    </p>
+    <button class="primary" id="addShopBtn" style="width:auto;padding:11px 26px;">افزودن مغازه</button>
+  </div>
+
+</div>
+
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    collection, addDoc, getDocs, doc, updateDoc, serverTimestamp, orderBy, query
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) window.location.href = "login.html";
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    signOut(auth).then(() => window.location.href = "login.html");
+  });
+
+  const shopsList = document.getElementById("shopsList");
+
+  async function loadShops() {
+    shopsList.innerHTML = "";
+    const q = query(collection(db, "shops"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      shopsList.innerHTML = `<div class="empty-state">هنوز هیچ مغازه‌ای اضافه نشده است.</div>`;
+      return;
+    }
+
+    snap.forEach((docSnap) => {
+      const shop = docSnap.data();
+      const row = document.createElement("div");
+      row.className = "shop-row";
+      row.innerHTML = `
+        <div>
+          <div class="name">${shop.name || "(بدون نام)"}</div>
+          <div class="phone">${shop.ownerPhone || ""} ${shop.ownerEmail ? " &middot; " + shop.ownerEmail : ""}</div>
+        </div>
+        <div class="row-actions">
+          <span class="badge ${shop.isActive ? "active" : "inactive"}">${shop.isActive ? "فعال" : "غیرفعال"}</span>
+          <button class="toggle-btn" data-id="${docSnap.id}" data-active="${shop.isActive}">
+            ${shop.isActive ? "غیرفعال کردن" : "فعال کردن"}
+          </button>
+        </div>
+      `;
+      shopsList.appendChild(row);
+    });
+
+    document.querySelectorAll(".toggle-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const current = btn.dataset.active === "true";
+        await updateDoc(doc(db, "shops", id), { isActive: !current });
+        loadShops();
+      });
+    });
+  }
+
+  document.getElementById("addShopBtn").addEventListener("click", async () => {
+    const formError = document.getElementById("formError");
+    formError.style.display = "none";
+
+    const name = document.getElementById("shopName").value.trim();
+    const ownerPhone = document.getElementById("ownerPhone").value.trim();
+    const ownerEmail = document.getElementById("ownerEmail").value.trim();
+
+    if (!name || !ownerPhone || !ownerEmail) {
+      formError.textContent = "لطفاً همه‌ی فیلدها را پر کنید.";
+      formError.style.display = "block";
+      return;
+    }
+
+    await addDoc(collection(db, "shops"), {
+      name, ownerPhone, ownerEmail,
+      isActive: true,
+      createdAt: serverTimestamp(),
+    });
+
+    document.getElementById("shopName").value = "";
+    document.getElementById("ownerPhone").value = "";
+    document.getElementById("ownerEmail").value = "";
+    loadShops();
+  });
+
+  loadShops();
+</script>
+
+</body>
+</html>

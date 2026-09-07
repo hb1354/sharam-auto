@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ورود | کارت دیجیتال سرویس خودرو</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="center-screen">
+  <div class="card login-card">
+    <h1>ورود به پنل</h1>
+    <p class="sub">با ایمیل و رمز عبوری که دریافت کرده‌اید وارد شوید</p>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <form id="loginForm">
+      <label for="email">ایمیل</label>
+      <input type="email" id="email" required autocomplete="username">
+
+      <label for="password">رمز عبور</label>
+      <input type="password" id="password" required autocomplete="current-password">
+
+      <button type="submit" class="primary" id="submitBtn">ورود</button>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const form = document.getElementById("loginForm");
+  const errorMsg = document.getElementById("errorMsg");
+  const submitBtn = document.getElementById("submitBtn");
+
+  function showError(text) {
+    errorMsg.textContent = text;
+    errorMsg.style.display = "block";
+  }
+
+  async function routeAfterLogin(user) {
+    // اگر ایمیل کاربر با فیلد ownerEmail یکی از مغازه‌ها یکی باشد، به پنل مغازه می‌رود
+    const q = query(collection(db, "shops"), where("ownerEmail", "==", user.email));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const shopDoc = snap.docs[0];
+      localStorage.setItem("shopId", shopDoc.id);
+      window.location.href = "shop.html";
+    } else {
+      // در غیر این صورت کاربر به‌عنوان مدیر کل (super-admin) شناخته می‌شود
+      window.location.href = "admin.html";
+    }
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = "none";
+    submitBtn.disabled = true;
+    submitBtn.textContent = "در حال ورود...";
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      await routeAfterLogin(cred.user);
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "ورود";
+      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+        showError("ایمیل یا رمز عبور اشتباه است.");
+      } else {
+        showError("خطا در ورود. دوباره تلاش کنید.");
+      }
+    }
+  });
+
+  // اگر کاربر از قبل لاگین است، مستقیم هدایت شود
+  onAuthStateChanged(auth, (user) => {
+    if (user) routeAfterLogin(user);
+  });
+</script>
+
+</body>
+</html>

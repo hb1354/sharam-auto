@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>کارت سرویس خودرو</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#1c1f26">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand" id="shopNameLabel">کارت سرویس خودرو</div>
+</div>
+
+<div class="wrap">
+  <div id="installBanner" class="qr-hint" style="display:none;justify-content:space-between;align-items:center;">
+    <span id="installText">این کارت رو به صفحه اصلی گوشی‌تون اضافه کنید تا همیشه در دسترس باشه.</span>
+    <button class="toggle-btn" id="installBtn" style="white-space:nowrap;">افزودن</button>
+  </div>
+  <div id="content">
+    <div class="empty-state">در حال بارگذاری...</div>
+  </div>
+</div>
+
+<script type="module">
+  import { db } from "./firebase-config.js";
+  import {
+    doc, getDoc, collection, query, where, orderBy, getDocs
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const params = new URLSearchParams(window.location.search);
+  const cardId = params.get("id");
+  const content = document.getElementById("content");
+
+  async function loadCard() {
+    if (!cardId) {
+      content.innerHTML = `<div class="empty-state">کد کارت نامعتبر است.</div>`;
+      return;
+    }
+
+    const cardSnap = await getDoc(doc(db, "cards", cardId));
+    if (!cardSnap.exists()) {
+      content.innerHTML = `<div class="empty-state">این کارت یافت نشد.</div>`;
+      return;
+    }
+    const cardData = cardSnap.data();
+
+    const shopSnap = await getDoc(doc(db, "shops", cardData.shopId));
+    const shopData = shopSnap.exists() ? shopSnap.data() : {};
+    document.getElementById("shopNameLabel").textContent = shopData.name || "کارت سرویس خودرو";
+
+    const q = query(
+      collection(db, "shops", cardData.shopId, "services"),
+      where("cardId", "==", cardId),
+      orderBy("date", "desc")
+    );
+    const servicesSnap = await getDocs(q);
+
+    let servicesHtml = `<div class="empty-state">هنوز سرویسی برای این خودرو ثبت نشده است.</div>`;
+    if (!servicesSnap.empty) {
+      servicesHtml = `<div class="card">`;
+      servicesSnap.forEach((docSnap) => {
+        const s = docSnap.data();
+        const dateStr = s.date && s.date.toDate ? s.date.toDate().toLocaleDateString("fa-IR") : "";
+        servicesHtml += `
+          <div class="service-row">
+            <div>
+              <div class="service-type">${s.type || ""}</div>
+              <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}</div>
+            </div>
+            <div class="service-meta">سرویس بعدی: ${s.nextDueKm ?? "-"} کیلومتر</div>
+          </div>
+        `;
+      });
+      servicesHtml += `</div>`;
+    }
+
+    content.innerHTML = `
+      <div class="plate" style="margin-bottom:20px;">${cardData.plateNumber || ""}</div>
+      <div class="section-title" style="margin-top:0;">سوابق سرویس</div>
+      ${servicesHtml}
+    `;
+  }
+
+  loadCard();
+
+  // --- ثبت سرویس‌ورکر برای قابلیت نصب روی صفحه اصلی ---
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+
+  const installBanner = document.getElementById("installBanner");
+  const installBtn = document.getElementById("installBtn");
+  const installText = document.getElementById("installText");
+
+  const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+  let deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isStandalone) installBanner.style.display = "flex";
+  });
+
+  installBtn.addEventListener("click", async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBanner.style.display = "none";
+    }
+  });
+
+  if (isIOS && !isStandalone) {
+    installText.textContent = "برای ذخیره‌ی همیشگی: روی دکمه‌ی Share زیر صفحه بزنید و «Add to Home Screen» را انتخاب کنید.";
+    installBtn.style.display = "none";
+    installBanner.style.display = "flex";
+  }
+</script>
+
+</body>
+</html>

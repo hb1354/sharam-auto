@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پنل مغازه | کارت دیجیتال سرویس خودرو</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand" id="shopNameLabel">پنل مغازه</div>
+  <button id="logoutBtn">خروج</button>
+</div>
+
+<div class="wrap">
+
+  <!-- نمای لیست کارت‌های مشتری -->
+  <div id="listView">
+    <div class="section-title">کارت‌های مشتری</div>
+    <div id="cardsList"></div>
+
+    <div class="section-title">افزودن مشتری جدید</div>
+    <div class="add-form">
+      <div class="error-msg" id="cardFormError"></div>
+      <label for="plateNumber">شماره پلاک یا نام مشتری</label>
+      <input type="text" id="plateNumber" placeholder="مثلاً ۱۲ ایران ۳۴۵ ب ۶۷">
+      <button class="primary" id="addCardBtn" style="width:auto;padding:11px 26px;">ساخت کارت جدید</button>
+    </div>
+  </div>
+
+  <!-- نمای جزئیات یک کارت مشتری -->
+  <div id="detailView" style="display:none;">
+    <button class="toggle-btn" id="backBtn" style="margin-bottom:18px;">&rarr; بازگشت به لیست</button>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="plate" id="platePill"></div>
+      <p style="font-size:13px;color:var(--steel);margin:14px 0 4px;">لینک کارت مشتری (برای QR):</p>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <img id="qrImg" width="110" height="110" style="border-radius:8px;border:1px solid var(--line);">
+        <a id="cardLink" target="_blank" style="font-size:13px;word-break:break-all;color:var(--steel);"></a>
+      </div>
+    </div>
+
+    <div class="section-title">سوابق سرویس</div>
+    <div class="card" id="servicesList"></div>
+
+    <div class="section-title">ثبت سرویس جدید</div>
+    <div class="add-form">
+      <div class="error-msg" id="serviceFormError"></div>
+      <div class="grid">
+        <div>
+          <label for="serviceType">نوع سرویس</label>
+          <select id="serviceType" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:15px;margin-bottom:16px;background:var(--paper);">
+            <option value="تعویض روغن">تعویض روغن</option>
+            <option value="تعویض فیلتر">تعویض فیلتر</option>
+            <option value="تعویض وایر">تعویض وایر</option>
+            <option value="سایر">سایر</option>
+          </select>
+        </div>
+        <div>
+          <label for="mileage">کیلومتر فعلی</label>
+          <input type="number" id="mileage" placeholder="45000">
+        </div>
+      </div>
+      <div class="grid">
+        <div>
+          <label for="nextDueKm">کیلومتر سرویس بعدی</label>
+          <input type="number" id="nextDueKm" placeholder="50000">
+        </div>
+        <div></div>
+      </div>
+      <button class="primary" id="addServiceBtn" style="width:auto;padding:11px 26px;">ثبت سرویس</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    doc, getDoc, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const shopId = localStorage.getItem("shopId");
+  if (!shopId) window.location.href = "login.html";
+
+  let shopData = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "login.html"; return; }
+    const shopSnap = await getDoc(doc(db, "shops", shopId));
+    if (!shopSnap.exists()) { window.location.href = "login.html"; return; }
+    shopData = shopSnap.data();
+    document.getElementById("shopNameLabel").textContent = shopData.name || "پنل مغازه";
+    loadCards();
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("shopId");
+    signOut(auth).then(() => window.location.href = "login.html");
+  });
+
+  const listView = document.getElementById("listView");
+  const detailView = document.getElementById("detailView");
+  const cardsList = document.getElementById("cardsList");
+
+  async function loadCards() {
+    cardsList.innerHTML = "";
+    const q = query(collection(db, "cards"), where("shopId", "==", shopId));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      cardsList.innerHTML = `<div class="empty-state">هنوز هیچ کارت مشتری‌ای ساخته نشده است.</div>`;
+      return;
+    }
+
+    snap.forEach((docSnap) => {
+      const c = docSnap.data();
+      const row = document.createElement("div");
+      row.className = "shop-row";
+      row.style.cursor = "pointer";
+      row.innerHTML = `
+        <div class="name">${c.plateNumber || "(بدون شماره)"}</div>
+        <div class="row-actions"><span class="badge active">مشاهده</span></div>
+      `;
+      row.addEventListener("click", () => openCard(docSnap.id, c));
+      cardsList.appendChild(row);
+    });
+  }
+
+  document.getElementById("addCardBtn").addEventListener("click", async () => {
+    const errBox = document.getElementById("cardFormError");
+    errBox.style.display = "none";
+    const plateNumber = document.getElementById("plateNumber").value.trim();
+    if (!plateNumber) {
+      errBox.textContent = "لطفاً شماره پلاک یا نام مشتری را وارد کنید.";
+      errBox.style.display = "block";
+      return;
+    }
+    await addDoc(collection(db, "cards"), {
+      shopId, plateNumber, createdAt: serverTimestamp(),
+    });
+    document.getElementById("plateNumber").value = "";
+    loadCards();
+  });
+
+  // --- نمای جزئیات کارت ---
+  let currentCardId = null;
+
+  function openCard(cardId, cardData) {
+    currentCardId = cardId;
+    listView.style.display = "none";
+    detailView.style.display = "block";
+    document.getElementById("platePill").textContent = cardData.plateNumber;
+
+    const cardUrl = `${window.location.origin}${window.location.pathname.replace("shop.html", "card.html")}?id=${cardId}`;
+    document.getElementById("cardLink").href = cardUrl;
+    document.getElementById("cardLink").textContent = cardUrl;
+    document.getElementById("qrImg").src = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(cardUrl)}`;
+
+    loadServices(cardId);
+  }
+
+  document.getElementById("backBtn").addEventListener("click", () => {
+    detailView.style.display = "none";
+    listView.style.display = "block";
+    loadCards();
+  });
+
+  async function loadServices(cardId) {
+    const list = document.getElementById("servicesList");
+    list.innerHTML = "";
+    const q = query(
+      collection(db, "shops", shopId, "services"),
+      where("cardId", "==", cardId),
+      orderBy("date", "desc")
+    );
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      list.innerHTML = `<div class="empty-state">هنوز سرویسی برای این مشتری ثبت نشده است.</div>`;
+      return;
+    }
+
+    snap.forEach((docSnap) => {
+      const s = docSnap.data();
+      const dateStr = s.date && s.date.toDate ? s.date.toDate().toLocaleDateString("fa-IR") : "";
+      const row = document.createElement("div");
+      row.className = "service-row";
+      row.innerHTML = `
+        <div>
+          <div class="service-type">${s.type || ""}</div>
+          <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}</div>
+        </div>
+        <div class="service-meta">سرویس بعدی: ${s.nextDueKm ?? "-"} کیلومتر</div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById("addServiceBtn").addEventListener("click", async () => {
+    const errBox = document.getElementById("serviceFormError");
+    errBox.style.display = "none";
+
+    const type = document.getElementById("serviceType").value;
+    const mileage = parseFloat(document.getElementById("mileage").value);
+    const nextDueKm = parseFloat(document.getElementById("nextDueKm").value);
+
+    if (!mileage) {
+      errBox.textContent = "لطفاً کیلومتر فعلی را وارد کنید.";
+      errBox.style.display = "block";
+      return;
+    }
+
+    await addDoc(collection(db, "shops", shopId, "services"), {
+      cardId: currentCardId,
+      type, mileage, nextDueKm: nextDueKm || null,
+      date: serverTimestamp(),
+    });
+
+    document.getElementById("mileage").value = "";
+    document.getElementById("nextDueKm").value = "";
+    loadServices(currentCardId);
+  });
+</script>
+
+</body>
+</html>
