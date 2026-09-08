@@ -75,8 +75,10 @@
 
     snap.forEach((docSnap) => {
       const shop = docSnap.data();
+      const id = docSnap.id;
       const row = document.createElement("div");
       row.className = "shop-row";
+      row.id = `shop-row-${id}`;
       row.innerHTML = `
         <div>
           <div class="name">${shop.name || "(بدون نام)"}</div>
@@ -84,15 +86,67 @@
         </div>
         <div class="row-actions">
           <span class="badge ${shop.isActive ? "active" : "inactive"}">${shop.isActive ? "فعال" : "غیرفعال"}</span>
-          <button class="toggle-btn" data-id="${docSnap.id}" data-active="${shop.isActive}">
+          <button class="toggle-btn edit-btn" data-id="${id}">ویرایش</button>
+          <button class="toggle-btn" data-id="${id}" data-active="${shop.isActive}">
             ${shop.isActive ? "غیرفعال کردن" : "فعال کردن"}
           </button>
         </div>
       `;
       shopsList.appendChild(row);
+
+      const editForm = document.createElement("div");
+      editForm.className = "add-form";
+      editForm.id = `edit-form-${id}`;
+      editForm.style.display = "none";
+      editForm.style.marginBottom = "10px";
+      editForm.innerHTML = `
+        <div class="grid">
+          <div>
+            <label>نام مغازه</label>
+            <input type="text" class="edit-name" value="${shop.name || ""}">
+          </div>
+          <div>
+            <label>شماره موبایل صاحب مغازه</label>
+            <input type="text" class="edit-phone" value="${shop.ownerPhone || ""}">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="primary save-edit-btn" style="width:auto;padding:9px 20px;" data-id="${id}">ذخیره</button>
+          <button class="toggle-btn cancel-edit-btn" data-id="${id}">انصراف</button>
+        </div>
+      `;
+      shopsList.appendChild(editForm);
     });
 
-    document.querySelectorAll(".toggle-btn").forEach((btn) => {
+    document.querySelectorAll(".edit-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        const form = document.getElementById(`edit-form-${id}`);
+        form.style.display = form.style.display === "none" ? "block" : "none";
+      });
+    });
+
+    document.querySelectorAll(".cancel-edit-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.getElementById(`edit-form-${btn.dataset.id}`).style.display = "none";
+      });
+    });
+
+    document.querySelectorAll(".save-edit-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const form = document.getElementById(`edit-form-${id}`);
+        const name = form.querySelector(".edit-name").value.trim();
+        const ownerPhone = form.querySelector(".edit-phone").value.trim();
+
+        if (!name || !ownerPhone) return;
+
+        await updateDoc(doc(db, "shops", id), { name, ownerPhone });
+        loadShops();
+      });
+    });
+
+    document.querySelectorAll(".toggle-btn:not(.edit-btn):not(.cancel-edit-btn)").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
         const current = btn.dataset.active === "true";
