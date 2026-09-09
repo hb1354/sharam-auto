@@ -17,6 +17,18 @@
 
   <!-- نمای لیست کارت‌های مشتری -->
   <div id="listView">
+
+    <div class="section-title" style="margin-top:0;">QR ثابت مغازه (برای چاپ و نصب روی شیشه)</div>
+    <div class="card" style="margin-bottom:24px;">
+      <p style="font-size:13px;color:var(--steel);margin:0 0 12px;">
+        این یک QR ثابت است. فقط یک‌بار چاپ کنید و روی شیشه‌ی مغازه بچسبانید — همه‌ی مشتری‌ها از همین یکی استفاده می‌کنند.
+      </p>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <img id="shopQrImg" width="130" height="130" style="border-radius:8px;border:1px solid var(--line);">
+        <a id="shopQrLink" target="_blank" style="font-size:13px;word-break:break-all;color:var(--steel);"></a>
+      </div>
+    </div>
+
     <div class="section-title">کارت‌های مشتری</div>
     <div id="cardsList"></div>
 
@@ -35,11 +47,6 @@
 
     <div class="card" style="margin-bottom:20px;">
       <div class="plate" id="platePill"></div>
-      <p style="font-size:13px;color:var(--steel);margin:14px 0 4px;">لینک کارت مشتری (برای QR):</p>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <img id="qrImg" width="110" height="110" style="border-radius:8px;border:1px solid var(--line);">
-        <a id="cardLink" target="_blank" style="font-size:13px;word-break:break-all;color:var(--steel);"></a>
-      </div>
     </div>
 
     <div class="section-title">سوابق سرویس</div>
@@ -51,12 +58,12 @@
       <div class="grid">
         <div>
           <label for="serviceType">نوع سرویس</label>
-          <select id="serviceType" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:15px;margin-bottom:16px;background:var(--paper);">
-            <option value="تعویض روغن">تعویض روغن</option>
-            <option value="تعویض فیلتر">تعویض فیلتر</option>
-            <option value="تعویض وایر">تعویض وایر</option>
-            <option value="سایر">سایر</option>
-          </select>
+          <input type="text" id="serviceType" list="serviceTypeOptions" placeholder="مثلاً تعویض روغن">
+          <datalist id="serviceTypeOptions">
+            <option value="تعویض روغن">
+            <option value="تعویض فیلتر">
+            <option value="تعویض وایر">
+          </datalist>
         </div>
         <div>
           <label for="mileage">کیلومتر فعلی</label>
@@ -70,6 +77,8 @@
         </div>
         <div></div>
       </div>
+      <label for="serviceNotes">توضیحات (اختیاری)</label>
+      <textarea id="serviceNotes" rows="2" placeholder="یادداشت آزاد درباره‌ی این سرویس..." style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:16px;background:var(--paper);color:var(--ink);resize:vertical;"></textarea>
       <button class="primary" id="addServiceBtn" style="width:auto;padding:11px 26px;">ثبت سرویس</button>
     </div>
   </div>
@@ -80,7 +89,8 @@
   import { auth, db } from "./firebase-config.js";
   import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
-    doc, getDoc, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp
+    doc, getDoc, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp,
+    updateDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const shopId = localStorage.getItem("shopId");
@@ -94,6 +104,12 @@
     if (!shopSnap.exists()) { window.location.href = "login.html"; return; }
     shopData = shopSnap.data();
     document.getElementById("shopNameLabel").textContent = shopData.name || "پنل مغازه";
+
+    const shopUrl = `${window.location.origin}${window.location.pathname.replace("shop.html", "card.html")}?shop=${shopId}`;
+    document.getElementById("shopQrLink").href = shopUrl;
+    document.getElementById("shopQrLink").textContent = shopUrl;
+    document.getElementById("shopQrImg").src = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(shopUrl)}`;
+
     loadCards();
   });
 
@@ -154,12 +170,6 @@
     listView.style.display = "none";
     detailView.style.display = "block";
     document.getElementById("platePill").textContent = cardData.plateNumber;
-
-    const cardUrl = `${window.location.origin}${window.location.pathname.replace("shop.html", "card.html")}?id=${cardId}`;
-    document.getElementById("cardLink").href = cardUrl;
-    document.getElementById("cardLink").textContent = cardUrl;
-    document.getElementById("qrImg").src = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(cardUrl)}`;
-
     loadServices(cardId);
   }
 
@@ -186,17 +196,92 @@
 
     snap.forEach((docSnap) => {
       const s = docSnap.data();
+      const id = docSnap.id;
       const dateStr = s.date && s.date.toDate ? s.date.toDate().toLocaleDateString("fa-IR") : "";
       const row = document.createElement("div");
       row.className = "service-row";
+      row.id = `svc-row-${id}`;
       row.innerHTML = `
         <div>
           <div class="service-type">${s.type || ""}</div>
-          <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}</div>
+          <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}${s.notes ? " &middot; " + s.notes : ""}</div>
         </div>
-        <div class="service-meta">سرویس بعدی: ${s.nextDueKm ?? "-"} کیلومتر</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="service-meta">سرویس بعدی: ${s.nextDueKm ?? "-"} کیلومتر</div>
+          <button class="toggle-btn svc-edit-btn" data-id="${id}" style="padding:5px 10px;font-size:12px;">ویرایش</button>
+          <button class="toggle-btn svc-delete-btn" data-id="${id}" style="padding:5px 10px;font-size:12px;">حذف</button>
+        </div>
       `;
       list.appendChild(row);
+
+      const editForm = document.createElement("div");
+      editForm.className = "add-form";
+      editForm.id = `svc-edit-form-${id}`;
+      editForm.style.display = "none";
+      editForm.style.margin = "10px 0";
+      editForm.innerHTML = `
+        <div class="grid">
+          <div>
+            <label>نوع سرویس</label>
+            <input type="text" class="svc-edit-type" value="${s.type || ""}">
+          </div>
+          <div>
+            <label>کیلومتر فعلی</label>
+            <input type="number" class="svc-edit-mileage" value="${s.mileage ?? ""}">
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <label>کیلومتر سرویس بعدی</label>
+            <input type="number" class="svc-edit-next" value="${s.nextDueKm ?? ""}">
+          </div>
+          <div></div>
+        </div>
+        <label>توضیحات</label>
+        <textarea class="svc-edit-notes" rows="2" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:16px;background:var(--paper);color:var(--ink);resize:vertical;">${s.notes || ""}</textarea>
+        <div style="display:flex;gap:10px;">
+          <button class="primary svc-save-btn" style="width:auto;padding:9px 20px;" data-id="${id}">ذخیره</button>
+          <button class="toggle-btn svc-cancel-btn" data-id="${id}">انصراف</button>
+        </div>
+      `;
+      list.appendChild(editForm);
+    });
+
+    document.querySelectorAll(".svc-edit-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const form = document.getElementById(`svc-edit-form-${btn.dataset.id}`);
+        form.style.display = form.style.display === "none" ? "block" : "none";
+      });
+    });
+
+    document.querySelectorAll(".svc-cancel-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.getElementById(`svc-edit-form-${btn.dataset.id}`).style.display = "none";
+      });
+    });
+
+    document.querySelectorAll(".svc-save-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const form = document.getElementById(`svc-edit-form-${id}`);
+        const type = form.querySelector(".svc-edit-type").value.trim();
+        const mileage = parseFloat(form.querySelector(".svc-edit-mileage").value);
+        const nextDueKm = parseFloat(form.querySelector(".svc-edit-next").value);
+        const notes = form.querySelector(".svc-edit-notes").value.trim();
+
+        await updateDoc(doc(db, "shops", shopId, "services", id), {
+          type, mileage: mileage || null, nextDueKm: nextDueKm || null, notes,
+        });
+        loadServices(currentCardId);
+      });
+    });
+
+    document.querySelectorAll(".svc-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("این سرویس حذف شود؟")) return;
+        await deleteDoc(doc(db, "shops", shopId, "services", btn.dataset.id));
+        loadServices(currentCardId);
+      });
     });
   }
 
@@ -204,10 +289,16 @@
     const errBox = document.getElementById("serviceFormError");
     errBox.style.display = "none";
 
-    const type = document.getElementById("serviceType").value;
+    const type = document.getElementById("serviceType").value.trim();
     const mileage = parseFloat(document.getElementById("mileage").value);
     const nextDueKm = parseFloat(document.getElementById("nextDueKm").value);
+    const notes = document.getElementById("serviceNotes").value.trim();
 
+    if (!type) {
+      errBox.textContent = "لطفاً نوع سرویس را وارد کنید.";
+      errBox.style.display = "block";
+      return;
+    }
     if (!mileage) {
       errBox.textContent = "لطفاً کیلومتر فعلی را وارد کنید.";
       errBox.style.display = "block";
@@ -216,12 +307,14 @@
 
     await addDoc(collection(db, "shops", shopId, "services"), {
       cardId: currentCardId,
-      type, mileage, nextDueKm: nextDueKm || null,
+      type, mileage, nextDueKm: nextDueKm || null, notes,
       date: serverTimestamp(),
     });
 
+    document.getElementById("serviceType").value = "";
     document.getElementById("mileage").value = "";
     document.getElementById("nextDueKm").value = "";
+    document.getElementById("serviceNotes").value = "";
     loadServices(currentCardId);
   });
 </script>

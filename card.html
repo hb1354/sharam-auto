@@ -37,9 +37,106 @@
 
   const params = new URLSearchParams(window.location.search);
   const cardId = params.get("id");
+  const shopId = params.get("shop");
   const content = document.getElementById("content");
 
+  function renderServicesHtml(servicesSnap) {
+    let servicesHtml = `<div class="empty-state">هنوز سرویسی برای این خودرو ثبت نشده است.</div>`;
+    if (!servicesSnap.empty) {
+      servicesHtml = `<div class="card">`;
+      servicesSnap.forEach((docSnap) => {
+        const s = docSnap.data();
+        const dateStr = s.date && s.date.toDate ? s.date.toDate().toLocaleDateString("fa-IR") : "";
+        servicesHtml += `
+          <div class="service-row">
+            <div>
+              <div class="service-type">${s.type || ""}</div>
+              <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}${s.notes ? " &middot; " + s.notes : ""}</div>
+            </div>
+            <div class="service-meta">سرویس بعدی: ${s.nextDueKm ?? "-"} کیلومتر</div>
+          </div>
+        `;
+      });
+      servicesHtml += `</div>`;
+    }
+    return servicesHtml;
+  }
+
+  async function showCardHistory(shopIdVal, cardIdVal, plateNumber, backToSearch) {
+    const q = query(
+      collection(db, "shops", shopIdVal, "services"),
+      where("cardId", "==", cardIdVal),
+      orderBy("date", "desc")
+    );
+    const servicesSnap = await getDocs(q);
+
+    content.innerHTML = `
+      ${backToSearch ? `<button class="toggle-btn" id="backToSearchBtn" style="margin-bottom:16px;">&rarr; جست‌وجوی خودروی دیگر</button>` : ""}
+      <div class="plate" style="margin-bottom:20px;">${plateNumber || ""}</div>
+      <div class="section-title" style="margin-top:0;">سوابق سرویس</div>
+      ${renderServicesHtml(servicesSnap)}
+    `;
+
+    if (backToSearch) {
+      document.getElementById("backToSearchBtn").addEventListener("click", () => showPlateSearch(shopIdVal));
+    }
+  }
+
+  function showPlateSearch(shopIdVal, notFoundMsg) {
+    content.innerHTML = `
+      <div class="card">
+        <p style="font-size:14px;color:var(--steel);margin:0 0 14px;">شماره پلاک خودروی خود را وارد کنید تا سوابق سرویس آن را ببینید.</p>
+        ${notFoundMsg ? `<div class="error-msg" style="display:block;">${notFoundMsg}</div>` : ""}
+        <input type="text" id="plateSearchInput" placeholder="مثلاً ۱۲ ایران ۳۴۵ ب ۶۷">
+        <button class="primary" id="plateSearchBtn">جست‌وجو</button>
+      </div>
+    `;
+
+    document.getElementById("plateSearchBtn").addEventListener("click", async () => {
+      const term = document.getElementById("plateSearchInput").value.trim();
+      if (!term) return;
+
+      const q = query(collection(db, "cards"), where("shopId", "==", shopIdVal));
+      const snap = await getDocs(q);
+      const matches = [];
+      snap.forEach((docSnap) => {
+        const c = docSnap.data();
+        if ((c.plateNumber || "").includes(term)) matches.push({ id: docSnap.id, ...c });
+      });
+
+      if (matches.length === 0) {
+        showPlateSearch(shopIdVal, "خودرویی با این شماره پلاک پیدا نشد.");
+      } else if (matches.length === 1) {
+        showCardHistory(shopIdVal, matches[0].id, matches[0].plateNumber, true);
+      } else {
+        content.innerHTML = `
+          <div class="section-title" style="margin-top:0;">چند خودرو پیدا شد — یکی را انتخاب کنید</div>
+          <div id="matchList"></div>
+        `;
+        const list = document.getElementById("matchList");
+        matches.forEach((m) => {
+          const row = document.createElement("div");
+          row.className = "shop-row";
+          row.style.cursor = "pointer";
+          row.innerHTML = `<div class="name">${m.plateNumber}</div>`;
+          row.addEventListener("click", () => showCardHistory(shopIdVal, m.id, m.plateNumber, true));
+          list.appendChild(row);
+        });
+      }
+    });
+  }
+
   async function loadCard() {
+    // حالت جدید: QR ثابت مغازه (جست‌وجو بر اساس پلاک)
+    if (shopId) {
+      const shopSnap = await getDoc(doc(db, "shops", shopId));
+      const shopData = shopSnap.exists() ? shopSnap.data() : {};
+      document.getElementById("shopNameLabel").textContent = shopData.name || "کارت سرویس خودرو";
+      showPlateSearch(shopId);
+      return;
+    }
+
+    // حالت قدیمی: لینک مستقیم به یک کارت خاص (سازگاری با نسخه‌ی قبلی)
     if (!cardId) {
       content.innerHTML = `<div class="empty-state">کد کارت نامعتبر است.</div>`;
       return;
@@ -56,37 +153,7 @@
     const shopData = shopSnap.exists() ? shopSnap.data() : {};
     document.getElementById("shopNameLabel").textContent = shopData.name || "کارت سرویس خودرو";
 
-    const q = query(
-      collection(db, "shops", cardData.shopId, "services"),
-      where("cardId", "==", cardId),
-      orderBy("date", "desc")
-    );
-    const servicesSnap = await getDocs(q);
-
-    let servicesHtml = `<div class="empty-state">هنوز سرویسی برای این خودرو ثبت نشده است.</div>`;
-    if (!servicesSnap.empty) {
-      servicesHtml = `<div class="card">`;
-      servicesSnap.forEach((docSnap) => {
-        const s = docSnap.data();
-        const dateStr = s.date && s.date.toDate ? s.date.toDate().toLocaleDateString("fa-IR") : "";
-        servicesHtml += `
-          <div class="service-row">
-            <div>
-              <div class="service-type">${s.type || ""}</div>
-              <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}</div>
-            </div>
-            <div class="service-meta">سرویس بعدی: ${s.nextDueKm ?? "-"} کیلومتر</div>
-          </div>
-        `;
-      });
-      servicesHtml += `</div>`;
-    }
-
-    content.innerHTML = `
-      <div class="plate" style="margin-bottom:20px;">${cardData.plateNumber || ""}</div>
-      <div class="section-title" style="margin-top:0;">سوابق سرویس</div>
-      ${servicesHtml}
-    `;
+    showCardHistory(cardData.shopId, cardId, cardData.plateNumber, false);
   }
 
   loadCard();
