@@ -47,11 +47,18 @@
       servicesSnap.forEach((docSnap) => {
         const s = docSnap.data();
         const dateStr = s.date && s.date.toDate ? s.date.toDate().toLocaleDateString("fa-IR") : "";
+        const filters = [];
+        if (s.cabinFilter) filters.push("فیلتر کابین");
+        if (s.airFilter) filters.push("فیلتر هوا");
+        if (s.fuelFilter) filters.push("صافی بنزین");
+        if (s.oilFilter) filters.push("فیلتر روغن");
+        const filtersStr = filters.length ? filters.join("، ") : "بدون تعویض فیلتر";
         servicesHtml += `
           <div class="service-row">
             <div>
-              <div class="service-type">${s.type || ""}</div>
-              <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}${s.notes ? " &middot; " + s.notes : ""}</div>
+              <div class="service-type">${s.oilType || "(بدون نوع روغن)"}</div>
+              <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}</div>
+              <div class="service-meta">${filtersStr}${s.notes ? " &middot; " + s.notes : ""}</div>
             </div>
             <div class="service-meta">سرویس بعدی: ${s.nextDueKm ?? "-"} کیلومتر</div>
           </div>

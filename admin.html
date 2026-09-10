@@ -36,7 +36,10 @@
         <label for="ownerEmail">ایمیل ورود مغازه</label>
         <input type="email" id="ownerEmail" placeholder="shop1@example.com">
       </div>
-      <div></div>
+      <div>
+        <label for="shopAddress">آدرس مغازه (برای مسیریاب)</label>
+        <input type="text" id="shopAddress" placeholder="مثلاً قزوین، خیابان...">
+      </div>
     </div>
     <p style="font-size:12.5px;color:var(--steel);margin:-6px 0 16px;">
       پیش از افزودن، باید یک کاربر با همین ایمیل در بخش Authentication فایربیس ساخته باشید تا مغازه بتواند با آن وارد شود.
@@ -110,6 +113,13 @@
             <input type="text" class="edit-phone" value="${shop.ownerPhone || ""}">
           </div>
         </div>
+        <div class="grid">
+          <div>
+            <label>آدرس مغازه (برای مسیریاب)</label>
+            <input type="text" class="edit-address" value="${shop.address || ""}">
+          </div>
+          <div></div>
+        </div>
         <div style="display:flex;gap:10px;">
           <button class="primary save-edit-btn" style="width:auto;padding:9px 20px;" data-id="${id}">ذخیره</button>
           <button class="toggle-btn cancel-edit-btn" data-id="${id}">انصراف</button>
@@ -138,10 +148,11 @@
         const form = document.getElementById(`edit-form-${id}`);
         const name = form.querySelector(".edit-name").value.trim();
         const ownerPhone = form.querySelector(".edit-phone").value.trim();
+        const address = form.querySelector(".edit-address").value.trim();
 
         if (!name || !ownerPhone) return;
 
-        await updateDoc(doc(db, "shops", id), { name, ownerPhone });
+        await updateDoc(doc(db, "shops", id), { name, ownerPhone, address });
         loadShops();
       });
     });
@@ -163,6 +174,7 @@
     const name = document.getElementById("shopName").value.trim();
     const ownerPhone = document.getElementById("ownerPhone").value.trim();
     const ownerEmail = document.getElementById("ownerEmail").value.trim();
+    const address = document.getElementById("shopAddress").value.trim();
 
     if (!name || !ownerPhone || !ownerEmail) {
       formError.textContent = "لطفاً همه‌ی فیلدها را پر کنید.";
@@ -171,7 +183,7 @@
     }
 
     await addDoc(collection(db, "shops"), {
-      name, ownerPhone, ownerEmail,
+      name, ownerPhone, ownerEmail, address,
       isActive: true,
       createdAt: serverTimestamp(),
     });
@@ -179,6 +191,7 @@
     document.getElementById("shopName").value = "";
     document.getElementById("ownerPhone").value = "";
     document.getElementById("ownerEmail").value = "";
+    document.getElementById("shopAddress").value = "";
     loadShops();
   });
 

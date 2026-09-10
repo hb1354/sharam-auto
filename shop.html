@@ -27,6 +27,7 @@
         <img id="shopQrImg" width="130" height="130" style="border-radius:8px;border:1px solid var(--line);">
         <a id="shopQrLink" target="_blank" style="font-size:13px;word-break:break-all;color:var(--steel);"></a>
       </div>
+      <a id="shopRouteLink" target="_blank" class="toggle-btn" style="display:none;margin-top:14px;text-decoration:none;">مسیریاب آدرس مغازه (برای ارسال به مشتری)</a>
     </div>
 
     <div class="section-title">کارت‌های مشتری</div>
@@ -36,7 +37,7 @@
     <div class="add-form">
       <div class="error-msg" id="cardFormError"></div>
       <label for="plateNumber">شماره پلاک یا نام مشتری</label>
-      <input type="text" id="plateNumber" placeholder="مثلاً ۱۲ ایران ۳۴۵ ب ۶۷">
+      <input type="text" id="plateNumber" autocomplete="off" placeholder="مثلاً ۱۲ ایران ۳۴۵ ب ۶۷">
       <button class="primary" id="addCardBtn" style="width:auto;padding:11px 26px;">ساخت کارت جدید</button>
     </div>
   </div>
@@ -57,28 +58,30 @@
       <div class="error-msg" id="serviceFormError"></div>
       <div class="grid">
         <div>
-          <label for="serviceType">نوع سرویس</label>
-          <input type="text" id="serviceType" list="serviceTypeOptions" placeholder="مثلاً تعویض روغن">
-          <datalist id="serviceTypeOptions">
-            <option value="تعویض روغن">
-            <option value="تعویض فیلتر">
-            <option value="تعویض وایر">
-          </datalist>
+          <label for="oilType">نوع روغن</label>
+          <input type="text" id="oilType" autocomplete="off" placeholder="مثلاً پارس روغن">
         </div>
         <div>
           <label for="mileage">کیلومتر فعلی</label>
-          <input type="number" id="mileage" placeholder="45000">
+          <input type="number" id="mileage" autocomplete="off" placeholder="45000">
         </div>
       </div>
       <div class="grid">
         <div>
           <label for="nextDueKm">کیلومتر سرویس بعدی</label>
-          <input type="number" id="nextDueKm" placeholder="50000">
+          <input type="number" id="nextDueKm" autocomplete="off" placeholder="50000">
         </div>
         <div></div>
       </div>
+      <label style="margin-bottom:8px;">موارد انجام‌شده</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:16px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);"><input type="checkbox" id="cabinFilter" style="width:auto;margin:0;"> فیلتر کابین</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);"><input type="checkbox" id="airFilter" style="width:auto;margin:0;"> فیلتر هوا</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);"><input type="checkbox" id="fuelFilter" style="width:auto;margin:0;"> صافی بنزین</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);"><input type="checkbox" id="oilFilter" style="width:auto;margin:0;"> تعویض فیلتر روغن</label>
+      </div>
       <label for="serviceNotes">توضیحات (اختیاری)</label>
-      <textarea id="serviceNotes" rows="2" placeholder="یادداشت آزاد درباره‌ی این سرویس..." style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:16px;background:var(--paper);color:var(--ink);resize:vertical;"></textarea>
+      <textarea id="serviceNotes" rows="2" autocomplete="off" placeholder="یادداشت آزاد درباره‌ی این سرویس..." style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:16px;background:var(--paper);color:var(--ink);resize:vertical;"></textarea>
       <button class="primary" id="addServiceBtn" style="width:auto;padding:11px 26px;">ثبت سرویس</button>
     </div>
   </div>
@@ -109,6 +112,12 @@
     document.getElementById("shopQrLink").href = shopUrl;
     document.getElementById("shopQrLink").textContent = shopUrl;
     document.getElementById("shopQrImg").src = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(shopUrl)}`;
+
+    if (shopData.address) {
+      const routeLink = document.getElementById("shopRouteLink");
+      routeLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shopData.address)}`;
+      routeLink.style.display = "inline-block";
+    }
 
     loadCards();
   });
@@ -198,13 +207,21 @@
       const s = docSnap.data();
       const id = docSnap.id;
       const dateStr = s.date && s.date.toDate ? s.date.toDate().toLocaleDateString("fa-IR") : "";
+      const filters = [];
+      if (s.cabinFilter) filters.push("فیلتر کابین");
+      if (s.airFilter) filters.push("فیلتر هوا");
+      if (s.fuelFilter) filters.push("صافی بنزین");
+      if (s.oilFilter) filters.push("فیلتر روغن");
+      const filtersStr = filters.length ? filters.join("، ") : "بدون تعویض فیلتر";
+
       const row = document.createElement("div");
       row.className = "service-row";
       row.id = `svc-row-${id}`;
       row.innerHTML = `
         <div>
-          <div class="service-type">${s.type || ""}</div>
-          <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}${s.notes ? " &middot; " + s.notes : ""}</div>
+          <div class="service-type">${s.oilType || "(بدون نوع روغن)"}</div>
+          <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}</div>
+          <div class="service-meta">${filtersStr}${s.notes ? " &middot; " + s.notes : ""}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="service-meta">سرویس بعدی: ${s.nextDueKm ?? "-"} کیلومتر</div>
@@ -222,8 +239,8 @@
       editForm.innerHTML = `
         <div class="grid">
           <div>
-            <label>نوع سرویس</label>
-            <input type="text" class="svc-edit-type" value="${s.type || ""}">
+            <label>نوع روغن</label>
+            <input type="text" class="svc-edit-oiltype" value="${s.oilType || ""}">
           </div>
           <div>
             <label>کیلومتر فعلی</label>
@@ -236,6 +253,12 @@
             <input type="number" class="svc-edit-next" value="${s.nextDueKm ?? ""}">
           </div>
           <div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:16px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;"><input type="checkbox" class="svc-edit-cabin" style="width:auto;margin:0;" ${s.cabinFilter ? "checked" : ""}> فیلتر کابین</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;"><input type="checkbox" class="svc-edit-air" style="width:auto;margin:0;" ${s.airFilter ? "checked" : ""}> فیلتر هوا</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;"><input type="checkbox" class="svc-edit-fuel" style="width:auto;margin:0;" ${s.fuelFilter ? "checked" : ""}> صافی بنزین</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;"><input type="checkbox" class="svc-edit-oilfilter" style="width:auto;margin:0;" ${s.oilFilter ? "checked" : ""}> تعویض فیلتر روغن</label>
         </div>
         <label>توضیحات</label>
         <textarea class="svc-edit-notes" rows="2" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:16px;background:var(--paper);color:var(--ink);resize:vertical;">${s.notes || ""}</textarea>
@@ -264,13 +287,18 @@
       btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
         const form = document.getElementById(`svc-edit-form-${id}`);
-        const type = form.querySelector(".svc-edit-type").value.trim();
+        const oilType = form.querySelector(".svc-edit-oiltype").value.trim();
         const mileage = parseFloat(form.querySelector(".svc-edit-mileage").value);
         const nextDueKm = parseFloat(form.querySelector(".svc-edit-next").value);
         const notes = form.querySelector(".svc-edit-notes").value.trim();
+        const cabinFilter = form.querySelector(".svc-edit-cabin").checked;
+        const airFilter = form.querySelector(".svc-edit-air").checked;
+        const fuelFilter = form.querySelector(".svc-edit-fuel").checked;
+        const oilFilter = form.querySelector(".svc-edit-oilfilter").checked;
 
         await updateDoc(doc(db, "shops", shopId, "services", id), {
-          type, mileage: mileage || null, nextDueKm: nextDueKm || null, notes,
+          oilType, mileage: mileage || null, nextDueKm: nextDueKm || null, notes,
+          cabinFilter, airFilter, fuelFilter, oilFilter,
         });
         loadServices(currentCardId);
       });
@@ -289,16 +317,15 @@
     const errBox = document.getElementById("serviceFormError");
     errBox.style.display = "none";
 
-    const type = document.getElementById("serviceType").value.trim();
+    const oilType = document.getElementById("oilType").value.trim();
     const mileage = parseFloat(document.getElementById("mileage").value);
     const nextDueKm = parseFloat(document.getElementById("nextDueKm").value);
     const notes = document.getElementById("serviceNotes").value.trim();
+    const cabinFilter = document.getElementById("cabinFilter").checked;
+    const airFilter = document.getElementById("airFilter").checked;
+    const fuelFilter = document.getElementById("fuelFilter").checked;
+    const oilFilter = document.getElementById("oilFilter").checked;
 
-    if (!type) {
-      errBox.textContent = "لطفاً نوع سرویس را وارد کنید.";
-      errBox.style.display = "block";
-      return;
-    }
     if (!mileage) {
       errBox.textContent = "لطفاً کیلومتر فعلی را وارد کنید.";
       errBox.style.display = "block";
@@ -307,14 +334,19 @@
 
     await addDoc(collection(db, "shops", shopId, "services"), {
       cardId: currentCardId,
-      type, mileage, nextDueKm: nextDueKm || null, notes,
+      oilType, mileage, nextDueKm: nextDueKm || null, notes,
+      cabinFilter, airFilter, fuelFilter, oilFilter,
       date: serverTimestamp(),
     });
 
-    document.getElementById("serviceType").value = "";
+    document.getElementById("oilType").value = "";
     document.getElementById("mileage").value = "";
     document.getElementById("nextDueKm").value = "";
     document.getElementById("serviceNotes").value = "";
+    document.getElementById("cabinFilter").checked = false;
+    document.getElementById("airFilter").checked = false;
+    document.getElementById("fuelFilter").checked = false;
+    document.getElementById("oilFilter").checked = false;
     loadServices(currentCardId);
   });
 </script>
