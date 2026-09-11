@@ -1,18 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --ink: #1c1f26;
-  --paper: #f6f3ec;
-  --panel: #ffffff;
+  --ink: #f0e6d2;
+  --paper: #15171c;
+  --panel: #1f222b;
+  --topbar-bg: #0c0e12;
+  --chip-bg: #0c0e12;
+  --on-amber: #1c1408;
   --amber: #e2a63b;
   --amber-dark: #c98d24;
-  --steel: #4b5563;
-  --steel-light: #9aa3af;
-  --success: #3f7d5c;
-  --success-bg: #e8f2ec;
-  --danger: #b0413e;
-  --danger-bg: #fbeaea;
-  --line: #e4ded0;
+  --steel: #b9c0cc;
+  --steel-light: #4b5563;
+  --success: #7ed9a8;
+  --success-bg: rgba(63, 125, 92, 0.22);
+  --danger: #f29a94;
+  --danger-bg: rgba(176, 65, 62, 0.22);
+  --line: #33363f;
   --radius: 10px;
 }
 
@@ -32,12 +35,13 @@ body {
 }
 
 .topbar {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--topbar-bg);
+  color: var(--ink);
   padding: 18px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-bottom: 1px solid var(--line);
 }
 
 .topbar .brand {
@@ -53,7 +57,7 @@ body {
 .topbar button {
   background: transparent;
   border: 1px solid var(--steel-light);
-  color: var(--paper);
+  color: var(--ink);
   border-radius: var(--radius);
   padding: 8px 14px;
   font-family: inherit;
@@ -93,6 +97,7 @@ body {
   font-size: 22px;
   margin: 0 0 6px;
   font-weight: 800;
+  color: var(--amber);
 }
 
 .login-card .sub {
@@ -108,7 +113,7 @@ label {
   margin-bottom: 6px;
 }
 
-input {
+input, textarea, select {
   width: 100%;
   padding: 11px 13px;
   border: 1px solid var(--line);
@@ -120,7 +125,7 @@ input {
   color: var(--ink);
 }
 
-input:focus {
+input:focus, textarea:focus {
   outline: 2px solid var(--amber);
   outline-offset: 1px;
 }
@@ -128,7 +133,7 @@ input:focus {
 button.primary {
   width: 100%;
   background: var(--amber);
-  color: var(--ink);
+  color: var(--on-amber);
   border: none;
   border-radius: 8px;
   padding: 12px;
@@ -154,7 +159,7 @@ button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
 .section-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--steel);
+  color: var(--amber);
   margin: 32px 0 14px;
 }
 
@@ -172,6 +177,7 @@ button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
 .shop-row .name {
   font-weight: 700;
   font-size: 15px;
+  color: var(--ink);
 }
 
 .shop-row .phone {
@@ -194,7 +200,8 @@ button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .toggle-btn {
   border: 1px solid var(--line);
-  background: var(--paper);
+  background: var(--panel);
+  color: var(--ink);
   border-radius: 8px;
   padding: 7px 12px;
   font-family: inherit;
@@ -202,7 +209,7 @@ button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
   cursor: pointer;
 }
 
-.toggle-btn:hover { border-color: var(--amber); }
+.toggle-btn:hover { border-color: var(--amber); color: var(--amber); }
 
 .add-form {
   background: var(--panel);
@@ -235,6 +242,7 @@ button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
 .service-type {
   font-weight: 700;
   font-size: 14px;
+  color: var(--ink);
 }
 
 .service-meta {
@@ -262,11 +270,12 @@ button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .plate {
   display: inline-block;
-  background: var(--ink);
+  background: var(--chip-bg);
   color: var(--amber);
   font-weight: 800;
   letter-spacing: 1px;
   padding: 6px 14px;
   border-radius: 6px;
   font-size: 16px;
+  border: 1px solid var(--line);
 }

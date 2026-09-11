@@ -106,6 +106,10 @@
     const shopSnap = await getDoc(doc(db, "shops", shopId));
     if (!shopSnap.exists()) { window.location.href = "login.html"; return; }
     shopData = shopSnap.data();
+    if (shopData.isActive === false) {
+      document.body.innerHTML = `<div class="center-screen"><div class="card" style="text-align:center;"><p style="margin:0;">دسترسی این مغازه غیرفعال شده است.<br>لطفاً با مدیریت تماس بگیرید.</p></div></div>`;
+      return;
+    }
     document.getElementById("shopNameLabel").textContent = shopData.name || "پنل مغازه";
 
     const shopUrl = `${window.location.origin}${window.location.pathname.replace("shop.html", "card.html")}?shop=${shopId}`;

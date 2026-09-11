@@ -4,8 +4,8 @@
   "start_url": "card.html",
   "scope": ".",
   "display": "standalone",
-  "background_color": "#f6f3ec",
-  "theme_color": "#1c1f26",
+  "background_color": "#15171c",
+  "theme_color": "#0c0e12",
   "dir": "rtl",
   "lang": "fa",
   "icons": [
