@@ -268,14 +268,99 @@ button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
   margin-bottom: 20px;
 }
 
-.plate {
-  display: inline-block;
-  background: var(--chip-bg);
-  color: var(--amber);
-  font-weight: 800;
-  letter-spacing: 1px;
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 16px;
-  border: 1px solid var(--line);
+/* ===== طرح کارت دیجیتال (بر اساس طراحی اصلی مغازه) ===== */
+:root {
+  --bc-bg: #131209;
+  --bc-panel: #1c1a12;
+  --bc-panel-2: #211f16;
+  --bc-gold: #e6b23c;
+  --bc-copper: #c6743b;
+  --bc-text: #f2eee2;
+  --bc-muted: #9a9483;
+  --bc-line: #3a3826;
+  --bc-ok: #7f9e70;
 }
+
+.biz-page {
+  background: radial-gradient(ellipse at top, #1c1a11 0%, var(--bc-bg) 55%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 28px 14px 60px;
+}
+
+.biz-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bc-panel);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -20px rgba(0,0,0,.7);
+  border: 1px solid var(--bc-line);
+  color: var(--bc-text);
+}
+
+.biz-header { padding: 30px 24px 22px; text-align: center; }
+.biz-mark {
+  width: 56px; height: 56px; margin: 0 auto 14px;
+  border-radius: 50%;
+  background: conic-gradient(from 220deg, var(--bc-gold), var(--bc-copper), var(--bc-gold));
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+}
+.biz-shop-name { font-size: 26px; font-weight: 800; margin: 0; color: var(--bc-text); }
+.biz-tagline { color: var(--bc-muted); font-size: 13px; margin-top: 6px; font-weight: 500; }
+.biz-brands { margin-top: 16px; display: flex; justify-content: center; gap: 10px; color: var(--bc-muted); font-size: 11px; font-weight: 600; flex-wrap: wrap; }
+.biz-brands span { border: 1px solid var(--bc-line); padding: 4px 10px; border-radius: 20px; }
+
+.biz-perf { display: flex; align-items: center; padding: 0 8px; height: 0; position: relative; }
+.biz-perf::before { content: ''; display: block; width: 100%; border-top: 2px dashed var(--bc-line); }
+.biz-perf .notch { position: absolute; width: 20px; height: 20px; background: var(--bc-bg); border-radius: 50%; top: -10px; }
+.biz-perf .notch.left { left: -10px; }
+.biz-perf .notch.right { right: -10px; }
+
+.biz-actions { display: flex; padding: 18px 20px; gap: 10px; }
+.biz-actions a {
+  flex: 1; text-align: center; text-decoration: none; color: var(--bc-text);
+  background: var(--bc-panel-2); border: 1px solid var(--bc-line); border-radius: 12px;
+  padding: 11px 4px; font-size: 12px; font-weight: 600;
+}
+.biz-actions a .ico { display: block; font-size: 17px; margin-bottom: 4px; }
+.biz-actions a.primary { background: var(--bc-gold); color: #181509; border-color: var(--bc-gold); }
+
+.biz-record { margin: 4px 20px 18px; background: var(--bc-panel-2); border: 1px solid var(--bc-line); border-radius: 16px; padding: 18px 18px 6px; }
+.biz-record h3, .biz-checklist h3 {
+  margin: 0 0 14px; font-size: 14px; font-weight: 700; color: var(--bc-gold);
+  display: flex; align-items: center; gap: 8px;
+}
+.biz-record h3::before, .biz-checklist h3::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--bc-gold); }
+.biz-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--bc-line); gap: 12px; }
+.biz-row:last-child { border-bottom: none; }
+.biz-row label { font-size: 13px; color: var(--bc-muted); white-space: nowrap; }
+.biz-row .val { font-size: 14px; font-weight: 600; direction: ltr; text-align: left; min-width: 40%; }
+
+.biz-checklist { margin: 0 20px 20px; }
+.biz-chk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.biz-chk { display: flex; align-items: center; gap: 8px; background: var(--bc-panel-2); border: 1px solid var(--bc-line); border-radius: 10px; padding: 10px; font-size: 12.5px; }
+.biz-chk .box { width: 18px; height: 18px; min-width: 18px; border-radius: 5px; border: 1.5px solid var(--bc-muted); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.biz-chk.done .box { background: var(--bc-ok); border-color: var(--bc-ok); color: #12160f; }
+.biz-chk.done { border-color: var(--bc-ok); }
+
+.biz-history { margin: 4px 20px 18px; }
+.biz-history-item { background: var(--bc-panel-2); border: 1px solid var(--bc-line); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
+.biz-history-item .date { color: var(--bc-gold); font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+
+.biz-footer { padding: 16px 22px 24px; border-top: 1px solid var(--bc-line); font-size: 12px; color: var(--bc-muted); line-height: 2; }
+.biz-footer .phones { display: flex; flex-direction: column; margin-top: 4px; }
+.biz-footer .phones span { color: var(--bc-text); font-weight: 600; direction: ltr; text-align: right; display: block; }
+
+.biz-search { margin: 4px 20px 18px; }
+.biz-search input {
+  width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--bc-line);
+  background: var(--bc-panel-2); color: var(--bc-text); font-family: inherit; font-size: 15px; margin-bottom: 12px;
+}
+.biz-search button {
+  width: 100%; background: var(--bc-gold); color: #181509; border: none; border-radius: 12px;
+  padding: 12px; font-family: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
+}
+.biz-match { background: var(--bc-panel-2); border: 1px solid var(--bc-line); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; font-weight: 700; }
+.biz-match:hover { border-color: var(--bc-gold); }

@@ -8,24 +8,16 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#0c0e12">
+<meta name="theme-color" content="#131209">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
-<div class="topbar">
-  <div class="brand" id="shopNameLabel">کارت سرویس خودرو</div>
-</div>
-
-<div class="wrap">
-  <div id="installBanner" class="qr-hint" style="display:none;justify-content:space-between;align-items:center;">
-    <span id="installText">این کارت رو به صفحه اصلی گوشی‌تون اضافه کنید تا همیشه در دسترس باشه.</span>
-    <button class="toggle-btn" id="installBtn" style="white-space:nowrap;">افزودن</button>
-  </div>
-  <div id="content">
-    <div class="empty-state">در حال بارگذاری...</div>
+<div class="biz-page">
+  <div class="biz-card" id="content">
+    <div class="biz-header"><div class="biz-mark">🛢️</div><div style="color:var(--bc-muted);font-size:13px;">در حال بارگذاری...</div></div>
   </div>
 </div>
 
@@ -40,36 +32,93 @@
   const shopId = params.get("shop");
   const content = document.getElementById("content");
 
-  function renderServicesHtml(servicesSnap) {
-    let servicesHtml = `<div class="empty-state">هنوز سرویسی برای این خودرو ثبت نشده است.</div>`;
-    if (!servicesSnap.empty) {
-      servicesHtml = `<div class="card">`;
-      servicesSnap.forEach((docSnap) => {
-        const s = docSnap.data();
-        const dateStr = s.date && s.date.toDate ? s.date.toDate().toLocaleDateString("fa-IR") : "";
-        const filters = [];
-        if (s.cabinFilter) filters.push("فیلتر کابین");
-        if (s.airFilter) filters.push("فیلتر هوا");
-        if (s.fuelFilter) filters.push("صافی بنزین");
-        if (s.oilFilter) filters.push("فیلتر روغن");
-        const filtersStr = filters.length ? filters.join("، ") : "بدون تعویض فیلتر";
-        servicesHtml += `
-          <div class="service-row">
-            <div>
-              <div class="service-type">${s.oilType || "(بدون نوع روغن)"}</div>
-              <div class="service-meta">${dateStr} &middot; کیلومتر ${s.mileage ?? "-"}</div>
-              <div class="service-meta">${filtersStr}${s.notes ? " &middot; " + s.notes : ""}</div>
-            </div>
-            <div class="service-meta">سرویس بعدی: ${s.nextDueKm ?? "-"} کیلومتر</div>
-          </div>
-        `;
-      });
-      servicesHtml += `</div>`;
-    }
-    return servicesHtml;
+  function faNum(n) {
+    if (n === null || n === undefined || n === "") return "-";
+    return Number(n).toLocaleString("fa-IR");
   }
 
-  async function showCardHistory(shopIdVal, cardIdVal, plateNumber, backToSearch) {
+  function shopHeaderHtml(shopData) {
+    const phoneDigits = (shopData.ownerPhone || "").replace(/[^0-9]/g, "");
+    const mapQuery = encodeURIComponent(shopData.address || shopData.name || "");
+    return `
+      <div class="biz-header">
+        <div class="biz-mark">🛢️</div>
+        <h1 class="biz-shop-name">${shopData.name || ""}</h1>
+        <div class="biz-tagline">Smooth Ride Starts with Fresh Oil</div>
+      </div>
+      <div class="biz-perf"><span class="notch left"></span><span class="notch right"></span></div>
+      <div class="biz-actions">
+        <a href="tel:${phoneDigits}" class="primary"><span class="ico">📞</span>تماس</a>
+        <a href="https://www.google.com/maps/search/?api=1&query=${mapQuery}" target="_blank"><span class="ico">📍</span>مسیر</a>
+        <a href="#" id="shareBtn"><span class="ico">🔗</span>اشتراک</a>
+      </div>
+    `;
+  }
+
+  function footerHtml(shopData) {
+    return `
+      <div class="biz-footer">
+        <div>${shopData.address || ""}</div>
+        <div class="phones"><span>${shopData.ownerPhone || ""}</span></div>
+      </div>
+    `;
+  }
+
+  function wireShareButton() {
+    const btn = document.getElementById("shareBtn");
+    if (!btn) return;
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (navigator.share) {
+        navigator.share({ title: "کارت سرویس خودرو", url: location.href });
+      } else {
+        alert("لینک صفحه را کپی و ارسال کنید.");
+      }
+    });
+  }
+
+  function renderHistory(servicesSnap) {
+    if (servicesSnap.empty) {
+      return `<div class="biz-history"><div class="biz-history-item" style="text-align:center;color:var(--bc-muted);">هنوز سرویسی ثبت نشده است.</div></div>`;
+    }
+    const docs = servicesSnap.docs;
+    const latest = docs[0].data();
+    const filters = [
+      { key: "oilFilter", label: "تعویض فیلتر روغن" },
+      { key: "cabinFilter", label: "فیلتر کابین" },
+      { key: "airFilter", label: "تعویض فیلتر هوا" },
+      { key: "fuelFilter", label: "صافی بنزین" },
+    ];
+
+    let html = `
+      <div class="biz-record">
+        <h3>کارت سرویس خودرو</h3>
+        <div class="biz-row"><label>تاریخ</label><span class="val">${latest.date && latest.date.toDate ? latest.date.toDate().toLocaleDateString("fa-IR") : "-"}</span></div>
+        <div class="biz-row"><label>کیلومتر فعلی</label><span class="val">${faNum(latest.mileage)}</span></div>
+        <div class="biz-row"><label>کیلومتر سرویس بعدی</label><span class="val">${faNum(latest.nextDueKm)}</span></div>
+        <div class="biz-row"><label>نوع روغن</label><span class="val">${latest.oilType || "-"}</span></div>
+      </div>
+      <div class="biz-checklist">
+        <h3>چک‌لیست سرویس</h3>
+        <div class="biz-chk-grid">
+          ${filters.map(f => `<div class="biz-chk ${latest[f.key] ? "done" : ""}"><span class="box">${latest[f.key] ? "✓" : ""}</span>${f.label}</div>`).join("")}
+        </div>
+      </div>
+    `;
+
+    if (docs.length > 1) {
+      html += `<div class="biz-history"><h3 style="color:var(--bc-gold);font-size:14px;margin:0 0 10px;">سوابق قبلی</h3>`;
+      for (let i = 1; i < docs.length; i++) {
+        const s = docs[i].data();
+        const dateStr = s.date && s.date.toDate ? s.date.toDate().toLocaleDateString("fa-IR") : "";
+        html += `<div class="biz-history-item"><div class="date">${dateStr}</div><div>${s.oilType || ""} &middot; کیلومتر ${faNum(s.mileage)}</div></div>`;
+      }
+      html += `</div>`;
+    }
+    return html;
+  }
+
+  async function showCardHistory(shopIdVal, cardIdVal, plateNumber, shopData, backToSearch) {
     const q = query(
       collection(db, "shops", shopIdVal, "services"),
       where("cardId", "==", cardIdVal),
@@ -78,26 +127,32 @@
     const servicesSnap = await getDocs(q);
 
     content.innerHTML = `
-      ${backToSearch ? `<button class="toggle-btn" id="backToSearchBtn" style="margin-bottom:16px;">&rarr; جست‌وجوی خودروی دیگر</button>` : ""}
-      <div class="plate" style="margin-bottom:20px;">${plateNumber || ""}</div>
-      <div class="section-title" style="margin-top:0;">سوابق سرویس</div>
-      ${renderServicesHtml(servicesSnap)}
+      ${shopHeaderHtml(shopData)}
+      <div style="text-align:center;margin:0 20px 10px;">
+        <span style="display:inline-block;background:var(--bc-panel-2);border:1px solid var(--bc-line);color:var(--bc-gold);font-weight:800;padding:6px 16px;border-radius:20px;font-size:14px;">${plateNumber || ""}</span>
+      </div>
+      ${renderHistory(servicesSnap)}
+      ${backToSearch ? `<div style="padding:0 20px 18px;"><button class="toggle-btn" id="backToSearchBtn" style="width:100%;">→ جست‌وجوی خودروی دیگر</button></div>` : ""}
+      ${footerHtml(shopData)}
     `;
-
+    wireShareButton();
     if (backToSearch) {
-      document.getElementById("backToSearchBtn").addEventListener("click", () => showPlateSearch(shopIdVal));
+      document.getElementById("backToSearchBtn").addEventListener("click", () => showPlateSearch(shopIdVal, shopData));
     }
   }
 
-  function showPlateSearch(shopIdVal, notFoundMsg) {
+  function showPlateSearch(shopIdVal, shopData, notFoundMsg) {
     content.innerHTML = `
-      <div class="card">
-        <p style="font-size:14px;color:var(--steel);margin:0 0 14px;">شماره پلاک خودروی خود را وارد کنید تا سوابق سرویس آن را ببینید.</p>
+      ${shopHeaderHtml(shopData)}
+      <div class="biz-search">
+        <p style="font-size:13px;color:var(--bc-muted);margin:0 0 12px;">شماره پلاک خودروی خود را وارد کنید تا سوابق سرویس آن را ببینید.</p>
         ${notFoundMsg ? `<div class="error-msg" style="display:block;">${notFoundMsg}</div>` : ""}
-        <input type="text" id="plateSearchInput" placeholder="مثلاً ۱۲ ایران ۳۴۵ ب ۶۷">
-        <button class="primary" id="plateSearchBtn">جست‌وجو</button>
+        <input type="text" id="plateSearchInput" autocomplete="off" placeholder="مثلاً ۱۲ ایران ۳۴۵ ب ۶۷">
+        <button id="plateSearchBtn">جست‌وجو</button>
       </div>
+      ${footerHtml(shopData)}
     `;
+    wireShareButton();
 
     document.getElementById("plateSearchBtn").addEventListener("click", async () => {
       const term = document.getElementById("plateSearchInput").value.trim();
@@ -112,21 +167,24 @@
       });
 
       if (matches.length === 0) {
-        showPlateSearch(shopIdVal, "خودرویی با این شماره پلاک پیدا نشد.");
+        showPlateSearch(shopIdVal, shopData, "خودرویی با این شماره پلاک پیدا نشد.");
       } else if (matches.length === 1) {
-        showCardHistory(shopIdVal, matches[0].id, matches[0].plateNumber, true);
+        showCardHistory(shopIdVal, matches[0].id, matches[0].plateNumber, shopData, true);
       } else {
         content.innerHTML = `
-          <div class="section-title" style="margin-top:0;">چند خودرو پیدا شد — یکی را انتخاب کنید</div>
-          <div id="matchList"></div>
+          ${shopHeaderHtml(shopData)}
+          <div class="biz-search">
+            <p style="font-size:13px;color:var(--bc-muted);margin:0 0 12px;">چند خودرو پیدا شد — یکی را انتخاب کنید:</p>
+            <div id="matchList"></div>
+          </div>
         `;
+        wireShareButton();
         const list = document.getElementById("matchList");
         matches.forEach((m) => {
           const row = document.createElement("div");
-          row.className = "shop-row";
-          row.style.cursor = "pointer";
-          row.innerHTML = `<div class="name">${m.plateNumber}</div>`;
-          row.addEventListener("click", () => showCardHistory(shopIdVal, m.id, m.plateNumber, true));
+          row.className = "biz-match";
+          row.textContent = m.plateNumber;
+          row.addEventListener("click", () => showCardHistory(shopIdVal, m.id, m.plateNumber, shopData, true));
           list.appendChild(row);
         });
       }
@@ -134,73 +192,34 @@
   }
 
   async function loadCard() {
-    // حالت جدید: QR ثابت مغازه (جست‌وجو بر اساس پلاک)
     if (shopId) {
       const shopSnap = await getDoc(doc(db, "shops", shopId));
       const shopData = shopSnap.exists() ? shopSnap.data() : {};
-      document.getElementById("shopNameLabel").textContent = shopData.name || "کارت سرویس خودرو";
-      showPlateSearch(shopId);
+      showPlateSearch(shopId, shopData);
       return;
     }
 
-    // حالت قدیمی: لینک مستقیم به یک کارت خاص (سازگاری با نسخه‌ی قبلی)
     if (!cardId) {
-      content.innerHTML = `<div class="empty-state">کد کارت نامعتبر است.</div>`;
+      content.innerHTML = `<div class="biz-header"><div style="color:var(--bc-muted);">کد کارت نامعتبر است.</div></div>`;
       return;
     }
 
     const cardSnap = await getDoc(doc(db, "cards", cardId));
     if (!cardSnap.exists()) {
-      content.innerHTML = `<div class="empty-state">این کارت یافت نشد.</div>`;
+      content.innerHTML = `<div class="biz-header"><div style="color:var(--bc-muted);">این کارت یافت نشد.</div></div>`;
       return;
     }
     const cardData = cardSnap.data();
-
     const shopSnap = await getDoc(doc(db, "shops", cardData.shopId));
     const shopData = shopSnap.exists() ? shopSnap.data() : {};
-    document.getElementById("shopNameLabel").textContent = shopData.name || "کارت سرویس خودرو";
 
-    showCardHistory(cardData.shopId, cardId, cardData.plateNumber, false);
+    showCardHistory(cardData.shopId, cardId, cardData.plateNumber, shopData, false);
   }
 
   loadCard();
 
-  // --- ثبت سرویس‌ورکر برای قابلیت نصب روی صفحه اصلی ---
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
-  }
-
-  const isStandalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true;
-
-  const installBanner = document.getElementById("installBanner");
-  const installBtn = document.getElementById("installBtn");
-  const installText = document.getElementById("installText");
-
-  const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-
-  let deferredPrompt = null;
-
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    if (!isStandalone) installBanner.style.display = "flex";
-  });
-
-  installBtn.addEventListener("click", async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      installBanner.style.display = "none";
-    }
-  });
-
-  if (isIOS && !isStandalone) {
-    installText.textContent = "برای ذخیره‌ی همیشگی: روی دکمه‌ی Share زیر صفحه بزنید و «Add to Home Screen» را انتخاب کنید.";
-    installBtn.style.display = "none";
-    installBanner.style.display = "flex";
   }
 </script>
 
