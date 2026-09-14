@@ -216,7 +216,9 @@
     showCardHistory(cardData.shopId, cardId, cardData.plateNumber, shopData, false);
   }
 
-  loadCard();
+  loadCard().catch((err) => {
+    content.innerHTML = `<div class="biz-header"><div style="color:#f29a94;font-size:13px;word-break:break-all;">خطا: ${err.message || err}</div></div>`;
+  });
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});

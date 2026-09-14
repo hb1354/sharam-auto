@@ -1,4 +1,4 @@
-const CACHE_NAME = "hajar-service-card-v1";
+const CACHE_NAME = "hajar-service-card-v2";
 const SHELL_FILES = [
   "card.html",
   "style.css",
