@@ -276,9 +276,45 @@
     background:rgba(230,178,60,.08);
     border-radius:6px;
     padding:1px 4px;
+    border:1px dashed var(--gold);
   }
   body.editing [contenteditable]:focus{
-    background:rgba(230,178,60,.16);
+    background:rgba(230,178,60,.2);
+  }
+  .chk .lbl{ flex:1; }
+  .chk-remove{
+    display:none;
+    margin-right:6px;
+    color:var(--no);
+    font-weight:900;
+    font-size:15px;
+  }
+  body.editing .chk-remove{ display:inline-block; }
+  .chk-add-row{
+    display:none;
+    gap:8px;
+    margin-top:10px;
+  }
+  body.editing .chk-add-row{ display:flex; }
+  .chk-add-row input{
+    flex:1;
+    background:var(--panel-2);
+    border:1px dashed var(--gold);
+    border-radius:10px;
+    color:var(--text);
+    padding:9px 10px;
+    font-family:inherit;
+    font-size:12.5px;
+  }
+  .chk-add-row button{
+    background:var(--gold);
+    color:#181509;
+    border:none;
+    border-radius:10px;
+    padding:0 14px;
+    font-weight:700;
+    font-size:12.5px;
+    cursor:pointer;
   }
   .hint{
     text-align:center;
@@ -306,11 +342,11 @@
 
     <div class="actions">
       <a href="tel:02100000000" class="primary"><span class="ico">📞</span>تماس</a>
-      <a href="https://www.google.com/maps/search/?api=1&query=%D9%82%D8%B2%D9%88%DB%8C%D9%86%20%D9%86%D9%88%D8%A7%D8%A8%20%D8%B4%D9%85%D8%A7%D9%84%DB%8C%20%D9%86%D8%A8%D8%B4%20%DA%A9%D9%88%DA%86%D9%87%20%D9%85%DB%8C%D9%86%D8%A7" target="_blank" id="mapLink"><span class="ico">📍</span>مسیر</a>
+      <a href="#" target="_blank" id="mapLink"><span class="ico">📍</span>مسیر</a>
       <a href="#" onclick="sharePage(event)"><span class="ico">🔗</span>اشتراک</a>
     </div>
 
-    <div class="record">
+<div class="record">
       <h3>کارت سرویس خودرو</h3>
       <div class="row"><label>تاریخ</label><span class="val" contenteditable="true">۱۴۰۵/۰۵/۰۹</span></div>
       <div class="row"><label>کیلومتر فعلی</label><span class="val" contenteditable="true">۸۹٬۲۰۰</span></div>
@@ -320,17 +356,20 @@
 
     <div class="checklist">
       <h3>چک‌لیست سرویس</h3>
-
-<div class="chk-grid" id="chkGrid">
-        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span>تعویض فیلتر روغن</div>
-        <div class="chk" onclick="toggle(this)"><span class="box"></span>فیلتر کابین</div>
-        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span>تعویض فیلتر هوا</div>
-        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span>صافی بنزین</div>
+      <div class="chk-grid" id="chkGrid">
+        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span><span class="lbl">تعویض فیلتر روغن</span><span class="chk-remove" onclick="removeChk(event,this)">×</span></div>
+        <div class="chk" onclick="toggle(this)"><span class="box"></span><span class="lbl">فیلتر کابین</span><span class="chk-remove" onclick="removeChk(event,this)">×</span></div>
+        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span><span class="lbl">تعویض فیلتر هوا</span><span class="chk-remove" onclick="removeChk(event,this)">×</span></div>
+        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span><span class="lbl">صافی بنزین</span><span class="chk-remove" onclick="removeChk(event,this)">×</span></div>
+      </div>
+      <div class="chk-add-row" id="chkAddRow">
+        <input id="newChkInput" placeholder="نام مورد جدید را بنویسید">
+        <button onclick="addChkItem()">+ افزودن</button>
       </div>
     </div>
 
     <div class="footer">
-      <div class="addr" contenteditable="true">آدرس مغازه را اینجا وارد کنید</div>
+      <div class="addr" contenteditable="true">سنندج، آدرس دقیق مغازه را اینجا وارد کنید</div>
       <div class="phones">
         <span contenteditable="true">021-00000000</span>
         <span contenteditable="true">0912-000-0000</span>
@@ -363,7 +402,55 @@ async function checkShopStatus(){
   }
   return true;
 }
-checkShopStatus();
+checkShopStatus().then(active => { if(active) loadSavedRecord(); });
+
+const STORAGE_KEY = 'serviceRecord_' + SHOP_ID;
+
+function loadSavedRecord(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    const vals = document.querySelectorAll('.row .val');
+    if(data.date) vals[0].textContent = data.date;
+    if(data.kmCurrent) vals[1].textContent = data.kmCurrent;
+    if(data.kmNext) vals[2].textContent = data.kmNext;
+    if(data.oilType) vals[3].textContent = data.oilType;
+    if(data.checklist && Array.isArray(data.checklist)){
+      const grid = document.getElementById('chkGrid');
+      grid.innerHTML = '';
+      data.checklist.forEach(item=>{
+        const div = document.createElement('div');
+        div.className = 'chk' + (item.done ? ' done' : '');
+        div.onclick = function(){ toggle(div); };
+        div.innerHTML = '<span class="box">' + (item.done?'✓':'') + '</span><span class="lbl">' + item.label + '</span><span class="chk-remove" onclick="removeChk(event,this)">×</span>';
+        grid.appendChild(div);
+      });
+    }
+  }catch(err){
+    console.warn('failed to load saved record', err);
+  }
+}
+
+function saveRecord(){
+  try{
+    const vals = document.querySelectorAll('.row .val');
+    const checklist = Array.from(document.querySelectorAll('#chkGrid .chk')).map(el => ({
+      label: el.querySelector('.lbl').textContent.trim(),
+      done: el.classList.contains('done')
+    }));
+    const data = {
+      date: vals[0].textContent.trim(),
+      kmCurrent: vals[1].textContent.trim(),
+      kmNext: vals[2].textContent.trim(),
+      oilType: vals[3].textContent.trim(),
+      checklist: checklist
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }catch(err){
+    console.warn('failed to save record', err);
+  }
+}
 
 function toggle(el){
   if(!document.body.classList.contains('editing')) return;
@@ -374,10 +461,12 @@ function toggleEdit(){
   document.body.classList.toggle('editing');
   const on = document.body.classList.contains('editing');
   document.getElementById('editBtn').textContent = on ? '✔ پایان ویرایش' : '✎ حالت ویرایش';
+  if(!on){ saveRecord(); }
 }
 function updateMapLink(){
   const shopName = document.querySelector('.shop-name').textContent.trim();
-  const query = shopName + ' قزوین';
+  const address = document.querySelector('.footer .addr').textContent.trim();
+  const query = (shopName + ' ' + address).trim();
   document.getElementById('mapLink').href =
     'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query);
 }
@@ -385,13 +474,48 @@ document.querySelector('.shop-name').addEventListener('blur', updateMapLink);
 document.querySelector('.addr').addEventListener('blur', updateMapLink);
 updateMapLink();
 
+const MAX_CHK_ITEMS = 9;
+function removeChk(e, el){
+  e.stopPropagation();
+  el.remove();
+}
+function addChkItem(){
+  const input = document.getElementById('newChkInput');
+  const label = input.value.trim();
+  if(!label) return;
+  const grid = document.getElementById('chkGrid');
+  if(grid.children.length >= MAX_CHK_ITEMS){
+    alert('حداکثر ۹ مورد در چک‌لیست مجاز است.');
+    return;
+  }
+  const div = document.createElement('div');
+  div.className = 'chk';
+  div.onclick = function(){ toggle(div); };
+  div.innerHTML = '<span class="box"></span><span class="lbl">' + label + '</span><span class="chk-remove" onclick="removeChk(event,this)">×</span>';
+  grid.appendChild(div);
+  input.value = '';
+}
+
 function sharePage(e){
   e.preventDefault();
+  const url = location.href;
   if(navigator.share){
-    navigator.share({title:'کارت سرویس خودرو', url: location.href});
+    navigator.share({title:'کارت سرویس خودرو', url:url}).catch(()=>{
+      fallbackShare(url);
+    });
   } else {
-    alert('لینک صفحه را کپی و ارسال کنید.');
+    fallbackShare(url);
   }
+}
+function fallbackShare(url){
+  let copied = false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url);
+      copied = true;
+    }
+  }catch(err){}
+  prompt(copied ? 'لینک کپی شد. همچنین می‌توانید از همین کادر آن را کپی کنید:' : 'این لینک را کپی کنید:', url);
 }
 </script>
 </body>
