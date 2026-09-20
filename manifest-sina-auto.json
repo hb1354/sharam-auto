@@ -1,0 +1,12 @@
+{
+  "name": "کارت سرویس خودرو - اتوسرویس سینا",
+  "short_name": "کارت سرویس",
+  "start_url": "karte-sina-auto.html",
+  "display": "standalone",
+  "background_color": "#131209",
+  "theme_color": "#131209",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

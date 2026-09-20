@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>کارت دیجیتال سرویس خودرو</title>
+<link rel="manifest" href="manifest-sina-auto.json">
+<meta name="theme-color" content="#131209">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="کارت سرویس">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -185,6 +191,50 @@
   }
 
   /* CHECKLIST */
+  .history{
+    margin:0 20px 20px;
+  }
+  .history h3{
+    font-size:14px;
+    font-weight:700;
+    color:var(--gold);
+    margin:0 0 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    user-select:none;
+  }
+  .history h3::before{
+    content:'';
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--gold);
+  }
+  #histArrow{ margin-right:auto; color:var(--muted); font-size:11px; }
+  .history-list{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .history-item{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:9px 12px;
+    font-size:11.5px;
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    color:var(--muted);
+  }
+  .history-item.current{
+    border-color:var(--ok);
+    color:var(--text);
+  }
+  .history-item .h-date{ font-weight:700; white-space:nowrap; }
+  .history-item .h-km{ direction:ltr; white-space:nowrap; }
+  .history-item .h-oil{ white-space:nowrap; text-align:left; }
+
   .checklist{
     margin:0 20px 20px;
   }
@@ -331,6 +381,25 @@
     display:none;
   }
   body.editing .hint{display:block;}
+  .install-btn{
+    position:fixed;
+    bottom:78px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--panel-2);
+    color:var(--gold);
+    border:1px solid var(--gold);
+    padding:10px 20px;
+    border-radius:30px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:12.5px;
+    cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(0,0,0,.5);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
 </style>
 </head>
 <body>
@@ -375,6 +444,11 @@
       </div>
     </div>
 
+    <div class="history" id="historySection">
+      <h3 onclick="toggleHistory()" style="cursor:pointer;">📜 تاریخچه سرویس‌ها <span id="histCount"></span> <span id="histArrow">▾</span></h3>
+      <div id="historyList" class="history-list" style="display:none;"></div>
+    </div>
+
     <div class="footer">
       <div class="addr" contenteditable="true">سنندج، آدرس دقیق مغازه را اینجا وارد کنید</div>
       <div class="phones">
@@ -387,6 +461,7 @@
   <div class="hint">روی هر بخش که می‌خواهید ضربه بزنید و متن را ویرایش کنید</div>
 
   <button class="edit-toggle" onclick="toggleEdit()" id="editBtn">✎ حالت ویرایش</button>
+  <button class="install-btn" onclick="installApp()" id="installBtn" style="display:none;">📲 نصب روی گوشی</button>
 
 <script>
 // ⚠️ برای هر مغازه‌ی جدید، این شناسه را به یک نام یکتا تغییر دهید
@@ -398,11 +473,11 @@ async function checkShopStatus(){
     const res = await fetch('status.json?t=' + Date.now());
     const statusMap = await res.json();
     if(statusMap[SHOP_ID] === false){
-      document.getElementById('card').innerHTML = `
-        <div style="text-align:center;padding:70px 24px;color:var(--muted);font-size:14px;line-height:2;">
-          <span style="font-size:20px;color:var(--text);font-weight:700;margin-bottom:10px;display:block;">این سرویس غیرفعال شده</span>
-          برای اطلاعات بیشتر با ارائه‌دهنده‌ی این خدمت تماس بگیرید.
-        </div>`;
+      document.getElementById('card').innerHTML =
+        '<div style="text-align:center;padding:70px 24px;color:var(--muted);font-size:14px;line-height:2;">' +
+        '<span style="font-size:20px;color:var(--text);font-weight:700;margin-bottom:10px;display:block;">این سرویس غیرفعال شده</span>' +
+        'برای اطلاعات بیشتر با ارائه‌دهنده‌ی این خدمت تماس بگیرید.' +
+        '</div>';
       document.getElementById('editBtn').style.display = 'none';
       return false;
     }
@@ -414,49 +489,98 @@ async function checkShopStatus(){
 }
 checkShopStatus().then(active => { if(active) loadSavedRecord(); });
 
-const STORAGE_KEY = 'serviceRecord_' + SHOP_ID;
+const HISTORY_KEY = 'serviceHistory_' + SHOP_ID;
+const MAX_HISTORY = 20;
 
 function loadSavedRecord(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return;
-    const data = JSON.parse(raw);
-    const vals = document.querySelectorAll('.row .val');
-    if(data.date) vals[0].textContent = data.date;
-    if(data.kmCurrent) vals[1].textContent = data.kmCurrent;
-    if(data.kmNext) vals[2].textContent = data.kmNext;
-    if(data.oilType) vals[3].textContent = data.oilType;
-    if(data.checklist && Array.isArray(data.checklist)){
-      const grid = document.getElementById('chkGrid');
-      grid.innerHTML = '';
-      data.checklist.forEach(item=>{
-        const div = document.createElement('div');
-        div.className = 'chk' + (item.done ? ' done' : '');
-        div.onclick = function(){ toggle(div); };
-        div.innerHTML = '<span class="box">' + (item.done?'✓':'') + '</span><span class="lbl">' + item.label + '</span><span class="chk-remove" onclick="removeChk(event,this)">×</span>';
-        grid.appendChild(div);
-      });
+    const raw = localStorage.getItem(HISTORY_KEY);
+    let history = [];
+    if(raw){
+      history = JSON.parse(raw);
+      if(!Array.isArray(history)) history = [];
     }
+    if(history.length > 0){
+      const latest = history[history.length - 1];
+      const vals = document.querySelectorAll('.row .val');
+      if(latest.date) vals[0].textContent = latest.date;
+      if(latest.kmCurrent) vals[1].textContent = latest.kmCurrent;
+      if(latest.kmNext) vals[2].textContent = latest.kmNext;
+      if(latest.oilType) vals[3].textContent = latest.oilType;
+      if(latest.checklist && Array.isArray(latest.checklist)){
+        const grid = document.getElementById('chkGrid');
+        grid.innerHTML = '';
+        latest.checklist.forEach(function(item){
+          const div = document.createElement('div');
+          div.className = 'chk' + (item.done ? ' done' : '');
+          div.onclick = function(){ toggle(div); };
+          div.innerHTML = '<span class="box">' + (item.done?'✓':'') + '</span><span class="lbl">' + item.label + '</span><span class="chk-remove" onclick="removeChk(event,this)">×</span>';
+          grid.appendChild(div);
+        });
+      }
+    }
+    renderHistory(history);
   }catch(err){
     console.warn('failed to load saved record', err);
   }
 }
 
+function renderHistory(history){
+  const list = document.getElementById('historyList');
+  const count = document.getElementById('histCount');
+  count.textContent = '(' + history.length + ')';
+  if(history.length === 0){
+    list.innerHTML = '<div class="history-item">هنوز سابقه‌ای ثبت نشده است.</div>';
+    return;
+  }
+  const rows = history.slice().reverse().map(function(h, idx){
+    const isCurrent = idx === 0;
+    return '<div class="history-item' + (isCurrent ? ' current' : '') + '">' +
+      '<span class="h-date">' + h.date + (isCurrent ? ' (فعلی)' : '') + '</span>' +
+      '<span class="h-km">' + h.kmCurrent + ' ← ' + h.kmNext + '</span>' +
+      '<span class="h-oil">' + h.oilType + '</span>' +
+      '</div>';
+  }).join('');
+  list.innerHTML = rows;
+}
+
+function toggleHistory(){
+  const list = document.getElementById('historyList');
+  const arrow = document.getElementById('histArrow');
+  const open = list.style.display === 'block';
+  list.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▾' : '▴';
+}
+
 function saveRecord(){
   try{
     const vals = document.querySelectorAll('.row .val');
-    const checklist = Array.from(document.querySelectorAll('#chkGrid .chk')).map(el => ({
-      label: el.querySelector('.lbl').textContent.trim(),
-      done: el.classList.contains('done')
-    }));
-    const data = {
+    const checklist = Array.from(document.querySelectorAll('#chkGrid .chk')).map(function(el){
+      return {
+        label: el.querySelector('.lbl').textContent.trim(),
+        done: el.classList.contains('done')
+      };
+    });
+    const entry = {
       date: vals[0].textContent.trim(),
       kmCurrent: vals[1].textContent.trim(),
       kmNext: vals[2].textContent.trim(),
       oilType: vals[3].textContent.trim(),
-      checklist: checklist
+      checklist: checklist,
+      savedAt: Date.now()
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    let history = [];
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if(raw){
+      history = JSON.parse(raw);
+      if(!Array.isArray(history)) history = [];
+    }
+    history.push(entry);
+    if(history.length > MAX_HISTORY){
+      history = history.slice(history.length - MAX_HISTORY);
+    }
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderHistory(history);
   }catch(err){
     console.warn('failed to save record', err);
   }
@@ -526,6 +650,29 @@ function fallbackShare(url){
     }
   }catch(err){}
   prompt(copied ? 'لینک کپی شد. همچنین می‌توانید از همین کادر آن را کپی کنید:' : 'این لینک را کپی کنید:', url);
+}
+
+let deferredInstallPrompt;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+function installApp(){
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(function(){
+    deferredInstallPrompt = null;
+    document.getElementById('installBtn').style.display = 'none';
+  });
+}
+window.addEventListener('appinstalled', function(){
+  document.getElementById('installBtn').style.display = 'none';
+});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(function(err){
+    console.warn('service worker registration failed', err);
+  });
 }
 </script>
 </body>
