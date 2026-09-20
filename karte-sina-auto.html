@@ -42,6 +42,7 @@
     position:relative;
   }
 
+  /* HEADER */
   .header{
     padding:30px 24px 22px;
     text-align:center;
@@ -85,6 +86,7 @@
     border-radius:20px;
   }
 
+  /* PERFORATION */
   .perf{
     display:flex;
     align-items:center;
@@ -108,6 +110,7 @@
   .perf .notch.left{left:-10px;}
   .perf .notch.right{right:-10px;}
 
+  /* ACTIONS */
   .actions{
     display:flex;
     padding:18px 20px;
@@ -134,6 +137,7 @@
     border-color:var(--gold);
   }
 
+  /* SERVICE RECORD */
   .record{
     margin:4px 20px 18px;
     background:var(--panel-2);
@@ -180,7 +184,8 @@
     text-align:left;
   }
 
-.checklist{
+  /* CHECKLIST */
+  .checklist{
     margin:0 20px 20px;
   }
   .checklist h3{
@@ -232,6 +237,7 @@
   }
   .chk.done{border-color:var(--ok);}
 
+  /* FOOTER */
   .footer{
     padding:16px 22px 24px;
     border-top:1px solid var(--line);
@@ -253,6 +259,7 @@
     text-align:right;
   }
 
+  /* EDIT TOGGLE */
   .edit-toggle{
     position:fixed;
     bottom:22px;
@@ -342,11 +349,11 @@
 
     <div class="actions">
       <a href="tel:02100000000" class="primary"><span class="ico">📞</span>تماس</a>
-      <a href="#" target="_blank" id="mapLink"><span class="ico">📍</span>مسیر</a>
+      <a href="https://www.google.com/maps/search/?api=1&query=%D9%82%D8%B2%D9%88%DB%8C%D9%86%20%D9%86%D9%88%D8%A7%D8%A8%20%D8%B4%D9%85%D8%A7%D9%84%DB%8C%20%D9%86%D8%A8%D8%B4%20%DA%A9%D9%88%DA%86%D9%87%20%D9%85%DB%8C%D9%86%D8%A7" target="_blank" id="mapLink"><span class="ico">📍</span>مسیر</a>
       <a href="#" onclick="sharePage(event)"><span class="ico">🔗</span>اشتراک</a>
     </div>
 
-<div class="record">
+    <div class="record">
       <h3>کارت سرویس خودرو</h3>
       <div class="row"><label>تاریخ</label><span class="val" contenteditable="true">۱۴۰۵/۰۵/۰۹</span></div>
       <div class="row"><label>کیلومتر فعلی</label><span class="val" contenteditable="true">۸۹٬۲۰۰</span></div>
@@ -382,6 +389,8 @@
   <button class="edit-toggle" onclick="toggleEdit()" id="editBtn">✎ حالت ویرایش</button>
 
 <script>
+// ⚠️ برای هر مغازه‌ی جدید، این شناسه را به یک نام یکتا تغییر دهید
+// و همین شناسه را با مقدار true در فایل status.json اضافه کنید
 const SHOP_ID = 'sina-auto';
 
 async function checkShopStatus(){
@@ -389,15 +398,16 @@ async function checkShopStatus(){
     const res = await fetch('status.json?t=' + Date.now());
     const statusMap = await res.json();
     if(statusMap[SHOP_ID] === false){
-      document.getElementById('card').innerHTML = 
+      document.getElementById('card').innerHTML = `
         <div style="text-align:center;padding:70px 24px;color:var(--muted);font-size:14px;line-height:2;">
           <span style="font-size:20px;color:var(--text);font-weight:700;margin-bottom:10px;display:block;">این سرویس غیرفعال شده</span>
           برای اطلاعات بیشتر با ارائه‌دهنده‌ی این خدمت تماس بگیرید.
-        </div>;
+        </div>`;
       document.getElementById('editBtn').style.display = 'none';
       return false;
     }
   }catch(err){
+    // اگر status.json در دسترس نبود (مثلاً هنوز آپلود نشده)، کارت به‌صورت عادی نمایش داده می‌شود
     console.warn('status.json check failed, showing card normally', err);
   }
   return true;
