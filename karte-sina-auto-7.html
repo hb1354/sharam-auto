@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>کارت دیجیتال سرویس خودرو</title>
+<link rel="manifest" href="manifest-sina-auto.json">
+<meta name="theme-color" content="#131209">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="کارت سرویس">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#131209;
+    --panel:#1c1a12;
+    --panel-2:#211f16;
+    --gold:#e6b23c;
+    --copper:#c6743b;
+    --text:#f2eee2;
+    --muted:#9a9483;
+    --line:#3a3826;
+    --ok:#7f9e70;
+    --no:#b5645a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top, #1c1a11 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'Vazirmatn', sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:28px 14px 60px;
+  }
+  .card{
+    width:100%;
+    max-width:400px;
+    background:var(--panel);
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.7);
+    border:1px solid var(--line);
+    position:relative;
+  }
+
+  /* HEADER */
+  .header{
+    padding:30px 24px 22px;
+    text-align:center;
+    position:relative;
+  }
+  .mark{
+    width:56px;height:56px;
+    margin:0 auto 14px;
+    border-radius:50%;
+    background:conic-gradient(from 220deg, var(--gold), var(--copper), var(--gold));
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;
+  }
+  .shop-name{
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:.3px;
+    outline:none;
+    margin:0;
+  }
+  .shop-tagline{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:6px;
+    font-weight:500;
+    outline:none;
+  }
+  .brands{
+    margin-top:16px;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:600;
+    flex-wrap:wrap;
+  }
+  .brands span{
+    border:1px solid var(--line);
+    padding:4px 10px;
+    border-radius:20px;
+  }
+
+  /* PERFORATION */
+  .perf{
+    display:flex;
+    align-items:center;
+    padding:0 8px;
+    height:0;
+    position:relative;
+  }
+  .perf::before{
+    content:'';
+    display:block;
+    width:100%;
+    border-top:2px dashed var(--line);
+  }
+  .perf .notch{
+    position:absolute;
+    width:20px;height:20px;
+    background:var(--bg);
+    border-radius:50%;
+    top:-10px;
+  }
+  .perf .notch.left{left:-10px;}
+  .perf .notch.right{right:-10px;}
+
+  /* ACTIONS */
+  .actions{
+    display:flex;
+    padding:18px 20px;
+    gap:10px;
+  }
+  .actions a{
+    flex:1;
+    text-align:center;
+    text-decoration:none;
+    color:var(--text);
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:11px 4px;
+    font-size:12px;
+    font-weight:600;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .actions a:active{transform:scale(.96);}
+  .actions a .ico{display:block;font-size:17px;margin-bottom:4px;}
+  .actions a.primary{
+    background:var(--gold);
+    color:#181509;
+    border-color:var(--gold);
+  }
+
+  /* SERVICE RECORD */
+  .record{
+    margin:4px 20px 18px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px 18px 6px;
+  }
+  .record h3{
+    margin:0 0 14px;
+    font-size:14px;
+    font-weight:700;
+    color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .record h3::before{
+    content:'';
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--gold);
+  }
+  .row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+    gap:12px;
+  }
+  .row:last-child{border-bottom:none;}
+  .row label{
+    font-size:13px;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .row .val{
+    font-size:14px;
+    font-weight:600;
+    text-align:left;
+    outline:none;
+    min-width:40%;
+    direction:ltr;
+    text-align:left;
+  }
+
+  /* CHECKLIST */
+  .history{
+    margin:0 20px 20px;
+  }
+  .history h3{
+    font-size:14px;
+    font-weight:700;
+    color:var(--gold);
+    margin:0 0 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    user-select:none;
+    flex-wrap:nowrap;
+  }
+  .history h3::before{
+    content:'';
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--gold);
+  }
+  #histArrow{ color:var(--muted); font-size:11px; }
+  .history-list{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .history-item{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:9px 12px;
+    font-size:11.5px;
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    color:var(--muted);
+  }
+  .history-item.current{
+    border-color:var(--ok);
+    color:var(--text);
+  }
+  .history-item .h-date{ font-weight:700; white-space:nowrap; }
+  .history-item .h-km{ direction:ltr; white-space:nowrap; }
+  .history-item .h-oil{ white-space:nowrap; text-align:left; }
+
+  .checklist{
+    margin:0 20px 20px;
+  }
+  .checklist h3{
+    font-size:14px;
+    font-weight:700;
+    color:var(--gold);
+    margin:0 0 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .checklist h3::before{
+    content:'';
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--gold);
+  }
+  .chk-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .chk{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 10px;
+    font-size:12.5px;
+    cursor:pointer;
+    user-select:none;
+    transition:border-color .15s ease;
+  }
+  .chk .box{
+    width:18px;height:18px;
+    min-width:18px;
+    border-radius:5px;
+    border:1.5px solid var(--muted);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;
+    transition:all .15s ease;
+  }
+  .chk.done .box{
+    background:var(--ok);
+    border-color:var(--ok);
+    color:#12160f;
+  }
+  .chk.done{border-color:var(--ok);}
+
+  /* FOOTER */
+  .footer{
+    padding:16px 22px 24px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--muted);
+    line-height:2;
+  }
+  .footer .addr{outline:none;}
+  .footer .phones{
+    display:flex;
+    flex-direction:column;
+    margin-top:4px;
+  }
+  .footer .phones span{
+    outline:none;
+    color:var(--text);
+    font-weight:600;
+    direction:ltr;
+    text-align:right;
+  }
+
+  /* EDIT TOGGLE */
+  .edit-toggle{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--gold);
+    color:#181509;
+    border:none;
+    padding:11px 22px;
+    border-radius:30px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(230,178,60,.5);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  body.editing [contenteditable]{
+    background:rgba(230,178,60,.08);
+    border-radius:6px;
+    padding:1px 4px;
+    border:1px dashed var(--gold);
+  }
+  body.editing [contenteditable]:focus{
+    background:rgba(230,178,60,.2);
+  }
+  .chk .lbl{ flex:1; }
+  .chk-remove{
+    display:none;
+    margin-right:6px;
+    color:var(--no);
+    font-weight:900;
+    font-size:15px;
+  }
+  body.editing .chk-remove{ display:inline-block; }
+  .chk-add-row{
+    display:none;
+    gap:8px;
+    margin-top:10px;
+  }
+  body.editing .chk-add-row{ display:flex; }
+  .chk-add-row input{
+    flex:1;
+    background:var(--panel-2);
+    border:1px dashed var(--gold);
+    border-radius:10px;
+    color:var(--text);
+    padding:9px 10px;
+    font-family:inherit;
+    font-size:12.5px;
+  }
+  .chk-add-row button{
+    background:var(--gold);
+    color:#181509;
+    border:none;
+    border-radius:10px;
+    padding:0 14px;
+    font-weight:700;
+    font-size:12.5px;
+    cursor:pointer;
+  }
+  .hint{
+    text-align:center;
+    font-size:11px;
+    color:var(--muted);
+    margin-top:14px;
+    display:none;
+  }
+  body.editing .hint{display:block;}
+  .rem-box{ padding:0 16px 10px; }
+  .rem-label{ font-size:11px; opacity:.7; margin-bottom:4px; }
+  .rem-days{ display:inline-block; min-width:28px; text-align:center; font-weight:bold; color:var(--gold); border-bottom:1px solid var(--gold); }
+  .rem-text{ font-size:13px; line-height:1.8; padding:6px 8px; border-radius:8px; background:var(--panel-2); border:1px solid var(--gold); }
+  .install-btn{
+    position:fixed;
+    bottom:78px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--panel-2);
+    color:var(--gold);
+    border:1px solid var(--gold);
+    padding:10px 20px;
+    border-radius:30px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:12.5px;
+    cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(0,0,0,.5);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="card" id="card">
+    <div class="header">
+      <div class="mark">🛢️</div>
+      <h1 class="shop-name" contenteditable="true">اتوسرویس شهرام</h1>
+      <div class="shop-tagline" contenteditable="true">Smooth Ride Starts with Fresh Oil</div>
+      <div class="brands">
+        <span>VW</span><span>Renault</span><span>Mitsubishi</span><span>Audi</span><span>KIA</span>
+      </div>
+    </div>
+
+    <div class="perf"><span class="notch left"></span><span class="notch right"></span></div>
+
+    <div class="actions">
+      <a href="tel:02833351767" class="primary"><span class="ico">📞</span>تماس</a>
+      <a href="https://www.google.com/maps/search/?api=1&query=%D9%82%D8%B2%D9%88%DB%8C%D9%86%20%D9%86%D9%88%D8%A7%D8%A8%20%D8%B4%D9%85%D8%A7%D9%84%DB%8C%20%D9%86%D8%A8%D8%B4%20%DA%A9%D9%88%DA%86%D9%87%20%D9%85%DB%8C%D9%86%D8%A7" target="_blank" id="mapLink"><span class="ico">📍</span>مسیر</a>
+      <a href="#" onclick="sharePage(event)"><span class="ico">🔗</span>معرفی به دیگران</a>
+    </div>
+
+    <div class="actions" style="padding-top:0;">
+      <a href="#" onclick="addReminder(event)" style="flex:1;background:var(--panel-2);border:1px solid var(--gold);color:var(--gold);"><span class="ico">🔔</span>افزودن/به‌روزرسانی یادآور تعویض روغن</a>
+    </div>
+    <div class="rem-box">
+      <div class="rem-label">متن یادآور تقویم (در حالت ویرایش قابل تغییر است):</div>
+      <div class="rem-text" id="remText" contenteditable="true">اتوسرویس شهرام کیلومتر و چک بفرما راننده با مرام - 028-33351767</div>
+      <div class="rem-label" style="margin-top:8px;">تکرار یادآور: هر <span class="rem-days" id="remDays" contenteditable="true">15</span> روز یک بار (برای هر راننده می‌توانید عدد را تغییر دهید)</div>
+    </div>
+
+    <div class="record">
+      <h3>کارت سرویس خودرو</h3>
+      <div class="row"><label>تاریخ</label><span class="val" contenteditable="true">۱۴۰۵/۰۵/۰۹</span></div>
+      <div class="row"><label>کیلومتر فعلی</label><span class="val" contenteditable="true">۸۹٬۲۰۰</span></div>
+      <div class="row"><label>کیلومتر سرویس بعدی</label><span class="val" contenteditable="true">۹۴٬۲۰۰</span></div>
+      <div class="row"><label>نوع روغن</label><span class="val" contenteditable="true">پارس ۵W۳۰</span></div>
+    </div>
+
+    <div class="checklist">
+      <h3>چک‌لیست سرویس</h3>
+      <div class="chk-grid" id="chkGrid">
+        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span><span class="lbl">تعویض فیلتر روغن</span><span class="chk-remove" onclick="removeChk(event,this)">×</span></div>
+        <div class="chk" onclick="toggle(this)"><span class="box"></span><span class="lbl">فیلتر کابین</span><span class="chk-remove" onclick="removeChk(event,this)">×</span></div>
+        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span><span class="lbl">تعویض فیلتر هوا</span><span class="chk-remove" onclick="removeChk(event,this)">×</span></div>
+        <div class="chk done" onclick="toggle(this)"><span class="box">✓</span><span class="lbl">صافی بنزین</span><span class="chk-remove" onclick="removeChk(event,this)">×</span></div>
+      </div>
+      <div class="chk-add-row" id="chkAddRow">
+        <input id="newChkInput" placeholder="نام مورد جدید را بنویسید">
+        <button onclick="addChkItem()">+ افزودن</button>
+      </div>
+    </div>
+
+    <div class="history" id="historySection">
+      <h3 onclick="toggleHistory()" style="cursor:pointer;">📜 تاریخچه سرویس‌ها <span id="histCount"></span> <span id="histArrow">▾</span></h3>
+      <div id="historyList" class="history-list" style="display:none;"></div>
+    </div>
+
+    <div class="footer">
+      <div class="addr" contenteditable="true">قزوین، نواب شمالی، نبش کوچه مینا</div>
+      <div class="phones">
+        <span contenteditable="true">028-33351767</span>
+        <span contenteditable="true">0912-887-2501</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">روی هر بخش که می‌خواهید ضربه بزنید و متن را ویرایش کنید</div>
+
+  <button class="edit-toggle" onclick="toggleEdit()" id="editBtn">✎ حالت ویرایش</button>
+  <button class="install-btn" onclick="installApp()" id="installBtn" style="display:none;">📲 نصب روی گوشی</button>
+
+<script>
+// ⚠️ برای هر مغازه‌ی جدید، این شناسه را به یک نام یکتا تغییر دهید
+// و همین شناسه را با مقدار true در فایل status.json اضافه کنید
+const SHOP_ID = 'sina-auto';
+
+async function checkShopStatus(){
+  try{
+    const res = await fetch('status.json?t=' + Date.now());
+    const statusMap = await res.json();
+    if(statusMap[SHOP_ID] === false){
+      document.getElementById('card').innerHTML =
+        '<div style="text-align:center;padding:70px 24px;color:var(--muted);font-size:14px;line-height:2;">' +
+        '<span style="font-size:20px;color:var(--text);font-weight:700;margin-bottom:10px;display:block;">این سرویس غیرفعال شده</span>' +
+        'برای اطلاعات بیشتر با ارائه‌دهنده‌ی این خدمت تماس بگیرید.' +
+        '</div>';
+      document.getElementById('editBtn').style.display = 'none';
+      return false;
+    }
+  }catch(err){
+    // اگر status.json در دسترس نبود (مثلاً هنوز آپلود نشده)، کارت به‌صورت عادی نمایش داده می‌شود
+    console.warn('status.json check failed, showing card normally', err);
+  }
+  return true;
+}
+checkShopStatus().then(active => { if(active) loadSavedRecord(); });
+
+const HISTORY_KEY = 'serviceHistory_' + SHOP_ID;
+const MAX_HISTORY = 20;
+
+var REM_KEY = 'reminderText_' + SHOP_ID;
+var REM_DAYS_KEY = 'reminderDays_' + SHOP_ID;
+function readDays(){
+  var t = document.getElementById('remDays').textContent.replace(/[۰-۹]/g, function(d){ return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); }).replace(/[٠-٩]/g, function(d){ return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); });
+  var n = parseInt(t.replace(/[^0-9]/g,''), 10);
+  if(!n || n < 1) n = 15;
+  if(n > 365) n = 365;
+  return n;
+}
+function loadReminderText(){
+  try{
+    var t = localStorage.getItem(REM_KEY);
+    if(t) document.getElementById('remText').textContent = t;
+    var dd = localStorage.getItem(REM_DAYS_KEY);
+    if(dd) document.getElementById('remDays').textContent = dd;
+  }catch(err){}
+}
+function saveReminderText(){
+  try{
+    var t = document.getElementById('remText').textContent.trim();
+    if(t) localStorage.setItem(REM_KEY, t);
+    var n = readDays();
+    document.getElementById('remDays').textContent = n;
+    localStorage.setItem(REM_DAYS_KEY, String(n));
+  }catch(err){}
+}
+loadReminderText();
+document.getElementById('remText').addEventListener('blur', saveReminderText);
+document.getElementById('remDays').addEventListener('blur', saveReminderText);
+
+function loadSavedRecord(){
+  try{
+    const raw = localStorage.getItem(HISTORY_KEY);
+    let history = [];
+    if(raw){
+      history = JSON.parse(raw);
+      if(!Array.isArray(history)) history = [];
+    }
+    if(history.length > 0){
+      const latest = history[history.length - 1];
+      const vals = document.querySelectorAll('.row .val');
+      if(latest.date) vals[0].textContent = latest.date;
+      if(latest.kmCurrent) vals[1].textContent = latest.kmCurrent;
+      if(latest.kmNext) vals[2].textContent = latest.kmNext;
+      if(latest.oilType) vals[3].textContent = latest.oilType;
+      if(latest.checklist && Array.isArray(latest.checklist)){
+        const grid = document.getElementById('chkGrid');
+        grid.innerHTML = '';
+        latest.checklist.forEach(function(item){
+          const div = document.createElement('div');
+          div.className = 'chk' + (item.done ? ' done' : '');
+          div.onclick = function(){ toggle(div); };
+          div.innerHTML = '<span class="box">' + (item.done?'✓':'') + '</span><span class="lbl">' + item.label + '</span><span class="chk-remove" onclick="removeChk(event,this)">×</span>';
+          grid.appendChild(div);
+        });
+      }
+    }
+    renderHistory(history);
+  }catch(err){
+    console.warn('failed to load saved record', err);
+  }
+}
+
+function renderHistory(history){
+  const list = document.getElementById('historyList');
+  const count = document.getElementById('histCount');
+  count.textContent = '(' + history.length + ')';
+  if(history.length === 0){
+    list.innerHTML = '<div class="history-item">هنوز سابقه‌ای ثبت نشده است.</div>';
+    return;
+  }
+  const rows = history.slice().reverse().map(function(h, idx){
+    const isCurrent = idx === 0;
+    return '<div class="history-item' + (isCurrent ? ' current' : '') + '">' +
+      '<span class="h-date">' + h.date + (isCurrent ? ' (فعلی)' : '') + '</span>' +
+      '<span class="h-km">' + h.kmCurrent + ' ← ' + h.kmNext + '</span>' +
+      '<span class="h-oil">' + h.oilType + '</span>' +
+      '</div>';
+  }).join('');
+  list.innerHTML = rows;
+}
+
+function toggleHistory(){
+  const list = document.getElementById('historyList');
+  const arrow = document.getElementById('histArrow');
+  const open = list.style.display === 'block';
+  list.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▾' : '▴';
+}
+
+function saveRecord(){
+  saveReminderText();
+  try{
+    const vals = document.querySelectorAll('.row .val');
+    const checklist = Array.from(document.querySelectorAll('#chkGrid .chk')).map(function(el){
+      return {
+        label: el.querySelector('.lbl').textContent.trim(),
+        done: el.classList.contains('done')
+      };
+    });
+    const entry = {
+      date: vals[0].textContent.trim(),
+      kmCurrent: vals[1].textContent.trim(),
+      kmNext: vals[2].textContent.trim(),
+      oilType: vals[3].textContent.trim(),
+      checklist: checklist,
+      savedAt: Date.now()
+    };
+    let history = [];
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if(raw){
+      history = JSON.parse(raw);
+      if(!Array.isArray(history)) history = [];
+    }
+    history.push(entry);
+    if(history.length > MAX_HISTORY){
+      history = history.slice(history.length - MAX_HISTORY);
+    }
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderHistory(history);
+  }catch(err){
+    console.warn('failed to save record', err);
+  }
+}
+
+function toggle(el){
+  if(!document.body.classList.contains('editing')) return;
+  el.classList.toggle('done');
+  el.querySelector('.box').textContent = el.classList.contains('done') ? '✓' : '';
+}
+function toggleEdit(){
+  document.body.classList.toggle('editing');
+  const on = document.body.classList.contains('editing');
+  document.getElementById('editBtn').textContent = on ? '✔ پایان ویرایش' : '✎ حالت ویرایش';
+  if(!on){ saveRecord(); }
+}
+function updateMapLink(){
+  const shopName = document.querySelector('.shop-name').textContent.trim();
+  const address = document.querySelector('.footer .addr').textContent.trim();
+  const query = (shopName + ' ' + address).trim();
+  document.getElementById('mapLink').href =
+    'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query);
+}
+document.querySelector('.shop-name').addEventListener('blur', updateMapLink);
+document.querySelector('.addr').addEventListener('blur', updateMapLink);
+updateMapLink();
+
+const MAX_CHK_ITEMS = 9;
+function removeChk(e, el){
+  e.stopPropagation();
+  el.remove();
+}
+function addChkItem(){
+  const input = document.getElementById('newChkInput');
+  const label = input.value.trim();
+  if(!label) return;
+  const grid = document.getElementById('chkGrid');
+  if(grid.children.length >= MAX_CHK_ITEMS){
+    alert('حداکثر ۹ مورد در چک‌لیست مجاز است.');
+    return;
+  }
+  const div = document.createElement('div');
+  div.className = 'chk';
+  div.onclick = function(){ toggle(div); };
+  div.innerHTML = '<span class="box"></span><span class="lbl">' + label + '</span><span class="chk-remove" onclick="removeChk(event,this)">×</span>';
+  grid.appendChild(div);
+  input.value = '';
+}
+
+function addReminder(e){
+  e.preventDefault();
+  const shopName = document.querySelector('.shop-name').textContent.trim();
+  const kmNext = document.querySelectorAll('.row .val')[2].textContent.trim();
+
+  function esc(s){
+    return s.replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+  }
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  const now = new Date();
+  const dtstamp = now.getUTCFullYear() + pad(now.getUTCMonth()+1) + pad(now.getUTCDate()) +
+                  'T' + pad(now.getUTCHours()) + pad(now.getUTCMinutes()) + pad(now.getUTCSeconds()) + 'Z';
+  const dtstart = now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate());
+  const uid = 'oil-reminder-' + SHOP_ID + '@kartedigitalsarvis';
+
+  const remText = document.getElementById('remText').textContent.trim() || shopName;
+  const summary = esc(remText);
+  const description = esc(remText + '\n' + 'اگر کیلومتر خودرو به ' + kmNext + ' رسید، وقت تعویض روغن است.');
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//KarteDigitalSarvis//FA',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:' + uid,
+    'DTSTAMP:' + dtstamp,
+    'DTSTART;VALUE=DATE:' + dtstart,
+    'RRULE:FREQ=DAILY;INTERVAL=' + readDays(),
+    'SUMMARY:' + summary,
+    'DESCRIPTION:' + description,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ];
+
+  const icsContent = lines.join('\r\n');
+  const blob = new Blob([icsContent], {type: 'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'yadavar-taviz-roghan.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+}
+
+function sharePage(e){
+  e.preventDefault();
+  const url = location.href;
+  if(navigator.share){
+    navigator.share({title:'کارت سرویس خودرو', url:url}).catch(()=>{
+      fallbackShare(url);
+    });
+  } else {
+    fallbackShare(url);
+  }
+}
+function fallbackShare(url){
+  let copied = false;
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url);
+      copied = true;
+    }
+  }catch(err){}
+  prompt(copied ? 'لینک کپی شد. همچنین می‌توانید از همین کادر آن را کپی کنید:' : 'این لینک را کپی کنید:', url);
+}
+
+let deferredInstallPrompt;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+function installApp(){
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(function(){
+    deferredInstallPrompt = null;
+    document.getElementById('installBtn').style.display = 'none';
+  });
+}
+window.addEventListener('appinstalled', function(){
+  document.getElementById('installBtn').style.display = 'none';
+});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(function(err){
+    console.warn('service worker registration failed', err);
+  });
+}
+</script>
+</body>
+</html>
